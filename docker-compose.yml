@@ -1,0 +1,44 @@
+version: "3.1"
+
+services:
+  api:
+    build: api/.
+    restart: always
+    depends_on:
+      - "db"
+    # environment:
+    #   EXAMPLE: example
+    volumes:
+      - ./api/docker-entrypoint.sh:/docker-entrypoint.sh
+    entrypoint: bash -c "/docker-entrypoint.sh"
+    ports:
+      - 8000:80
+
+  client:
+    image: node:20.9
+    restart: always
+    working_dir: /app
+    # environment:
+    # For these env vars to be usable they must begin with REACT_APP:
+    # REACT_EXAMPLE: example
+    volumes:
+      - ./client:/app
+    entrypoint: bash -c "npm install && npm run dev"
+    ports:
+      - 3000:3000
+      - 6006:6006
+
+  db:
+    image: postgres:16.0
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: mentha-db
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
