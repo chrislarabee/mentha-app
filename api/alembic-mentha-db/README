@@ -1,0 +1,29 @@
+# Mentha DB Alembic Migration Env
+
+This area of the api covers configuration of the alembic migration environment
+used for managing versions of the database that supports api operations.
+
+## Basic Usage
+
+You can set your dev database to match the structure specified by the alembic
+migration scripts by remoting into the api container and running:
+
+```
+alembic upgrade head
+```
+
+This will create all the necessary tables to match the current database and
+domain model schemas. Note that the initialization scripts for the api container
+already include a call to `alembic upgrade head`, so you only really need to do this
+if you create a new version.
+
+## New Versions
+
+You can create a new version with:
+
+```
+alembic revision -m "<short revision description>"
+```
+
+And then add the necessary details to the `upgrade` and `downgrade` function
+definitions in the resulting file.

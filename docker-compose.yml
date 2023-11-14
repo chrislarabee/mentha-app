@@ -6,10 +6,19 @@ services:
     restart: always
     depends_on:
       - "db"
-    # environment:
-    #   EXAMPLE: example
+    environment:
+      DB_URL: db:5432
+      DB_USER: postgres
+      DB_PWD: test
     volumes:
       - ./api/docker-entrypoint.sh:/docker-entrypoint.sh
+      - ./api/app:/app/app
+      - ./api/imports:/imports
+      - ./api/alembic-mentha-db:/app/alembic-mentha-db
+      - ./api/alembic.ini:/app/alembic.ini
+      - ./api/tests:/app/tests
+      - ./api/pyproject.toml:/app/pyproject.toml
+      - ./api/poetry.lock:/app/poetry.lock
     entrypoint: bash -c "/docker-entrypoint.sh"
     ports:
       - 8000:80

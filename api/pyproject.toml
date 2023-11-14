@@ -8,6 +8,9 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.11"
 fastapi = "^0.104.1"
+sqlalchemy = "^2.0.23"
+psycopg = {extras = ["binary"], version = "^3.1.12"}
+asyncpg = "^0.29.0"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -15,6 +18,8 @@ pytest = "^7.4.3"
 black = "^23.11.0"
 flake8 = "^6.1.0"
 mypy = "^1.7.0"
+alembic = "^1.12.1"
+python-dotenv = "^1.0.0"
 
 [build-system]
 requires = ["poetry-core"]
