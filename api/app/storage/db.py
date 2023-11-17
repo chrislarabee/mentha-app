@@ -237,6 +237,7 @@ class MenthaTable(Generic[DomainModelType]):
             if isinstance(arg, QueryOperation):
                 q = arg.apply(q, self._table.c[field])
             else:
+                arg = str(arg) if isinstance(arg, UUID) else arg
                 q = q.where(self._table.c[field] == arg)
 
         return q
