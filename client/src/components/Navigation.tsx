@@ -7,7 +7,6 @@ import Drawer from "@mui/material/Drawer";
 import MuiAppBar, { AppBarProps as MuiAppBarProps } from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import List from "@mui/material/List";
-import Typography from "@mui/material/Typography";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import MenuIcon from "@mui/icons-material/Menu";
@@ -25,6 +24,7 @@ import {
   InsertChart,
   SpeedOutlined,
 } from "@mui/icons-material";
+import { useRouter } from "next/navigation";
 
 const drawerWidth = 240;
 
@@ -77,13 +77,21 @@ const DrawerHeader = styled("div")(({ theme }) => ({
   justifyContent: "flex-end",
 }));
 
+interface NavItem {
+  icon: JSX.Element;
+  label: string;
+  url: string;
+}
+
 export default function Navigation({
   children,
 }: {
   children?: React.ReactNode;
 }) {
-  const theme = useTheme();
   const [open, setOpen] = React.useState(true);
+
+  const router = useRouter();
+  const theme = useTheme();
 
   const handleDrawerOpen = () => {
     setOpen(true);
@@ -93,7 +101,7 @@ export default function Navigation({
     setOpen(false);
   };
 
-  const navItems = [
+  const navItems: NavItem[] = [
     {
       icon: <SpeedOutlined />,
       label: "Dashboard",
@@ -112,7 +120,7 @@ export default function Navigation({
     {
       icon: <AccountTreeRounded />,
       label: "Categories",
-      url: "/",
+      url: "/categories",
     },
     {
       icon: <InsertChart />,
@@ -125,6 +133,10 @@ export default function Navigation({
       url: "/",
     },
   ];
+
+  const navigate = (item: NavItem) => {
+    router.push(item.url);
+  };
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -167,7 +179,7 @@ export default function Navigation({
         <List>
           {navItems.map((item) => (
             <ListItem key={item.label} disablePadding>
-              <ListItemButton>
+              <ListItemButton onClick={() => navigate(item)}>
                 <ListItemIcon>{item.icon}</ListItemIcon>
                 <ListItemText primary={item.label} />
               </ListItemButton>
