@@ -11,7 +11,7 @@ TRANSACTION_TABLE = "transactions"
 
 
 class Transaction(DomainModel, Generic[CategoryType]):
-    fitid: str
+    fitId: str
     amt: float
     date: datetime
     name: str

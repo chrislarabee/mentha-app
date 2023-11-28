@@ -16,8 +16,10 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from app.domain.account import ACCOUNT_TABLE, Account
 from app.domain.category import CATEGORY_TABLE, Category
 from app.domain.core import DomainModelType
+from app.domain.institution import INSTITUTION_TABLE, Institution
 from app.storage import utils
 
 MENTHA_DBNAME = "mentha-db"
@@ -62,9 +64,27 @@ class MenthaDB:
                 logging.info("Waiting for DB connection...")
                 sleep(1)
 
-        self._categories = MenthaTable(
+        self._categories = self._setup_table(
             domain_model=Category,
             table=CATEGORY_TABLE,
+        )
+        self._institutions = self._setup_table(
+            domain_model=Institution,
+            table=INSTITUTION_TABLE,
+        )
+        self._accounts = self._setup_table(
+            domain_model=Account[UUID],
+            table=ACCOUNT_TABLE,
+        )
+
+    def _setup_table(
+        self,
+        domain_model: type[DomainModelType],
+        table: str,
+    ) -> MenthaTable[DomainModelType]:
+        return MenthaTable(
+            domain_model=domain_model,
+            table=table,
             metadata=self._metadata,
             engine=self._engine,
             async_engine=self._engine_async,
@@ -83,6 +103,14 @@ class MenthaDB:
     @property
     def categories(self) -> MenthaTable[Category]:
         return self._categories
+
+    @property
+    def institutions(self) -> MenthaTable[Institution]:
+        return self._institutions
+
+    @property
+    def accounts(self) -> MenthaTable[Account[UUID]]:
+        return self._accounts
 
 
 class QueryOperation(ABC):

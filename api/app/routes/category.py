@@ -29,11 +29,6 @@ class CategoryRouter(BasicRouter[Category, CategoryInput]):
         router = super().create_fastapi_router()
 
         router.add_api_route(
-            "/",
-            self.get_all,
-            summary="Get All Categories",
-        )
-        router.add_api_route(
             "/by-owner/{owner_id}",
             self.get_by_owner,
             summary="Get Categories By Owner",
@@ -42,16 +37,13 @@ class CategoryRouter(BasicRouter[Category, CategoryInput]):
         return router
 
     async def add(self, input: CategoryInput) -> UUID:
-        result = await super().add(input)
-        return result
+        return await super().add(input)
 
     async def update(self, id: UUID, input: CategoryInput) -> Category:
-        result = await super().update(id, input)
-        return result
+        return await super().update(id, input)
 
     async def get_all(self) -> list[Category]:
-        results = await self._table.query_async()
-        return results
+        return await super().get_all()
 
     async def get_by_owner(self, owner_id: UUID) -> list[PrimaryCategory]:
         raw = await self._table.query_async(owner=owner_id)

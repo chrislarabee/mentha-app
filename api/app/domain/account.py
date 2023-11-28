@@ -1,0 +1,41 @@
+from __future__ import annotations
+
+from typing import Generic, Literal, TypeVar
+from uuid import UUID
+from app.domain.core import DomainModel, InputModel
+from app.domain.institution import Institution
+
+
+ACCOUNT_TABLE = "accounts"
+
+ACCOUNT_TYPES = ["Checking", "Savings"]
+AccountType = Literal["Checking", "Savings"]
+InstitutionType = TypeVar("InstitutionType", Institution, UUID)
+
+
+class Account(DomainModel, Generic[InstitutionType]):
+    fitId: str
+    accountType: AccountType
+    name: str
+    institution: InstitutionType
+    owner: UUID
+
+
+class AccountInput(InputModel):
+    fitId: str
+    accountType: AccountType
+    name: str
+    institution: UUID
+    # TODO: Remove this once it can be discerned by the API from the user:
+    owner: UUID
+
+
+def decode_account_input_model(uuid: UUID, input: AccountInput) -> Account[UUID]:
+    return Account(
+        id=uuid,
+        fitId=input.fitId,
+        accountType=input.accountType,
+        name=input.name,
+        institution=input.institution,
+        owner=input.owner,
+    )

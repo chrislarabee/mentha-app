@@ -17,7 +17,7 @@ class Category(DomainModel):
 class CategoryInput(InputModel):
     name: str
     parentCategory: Optional[UUID] = None
-    # TODO: Remove this:
+    # TODO: Remove this once it can be discerned by the API from the user:
     owner: UUID
 
 

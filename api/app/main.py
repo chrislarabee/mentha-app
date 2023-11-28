@@ -2,8 +2,10 @@ import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.routes.account import AccountRouter
 
 from app.routes.category import CategoryRouter
+from app.routes.institution import InstitutionRouter
 from app.storage.db import MenthaDB
 
 app = FastAPI(title="Mentha App API")
@@ -25,3 +27,9 @@ db = MenthaDB(
 
 category_router = CategoryRouter(db.categories)
 app.include_router(category_router.create_fastapi_router(), prefix="/categories")
+
+institution_router = InstitutionRouter(db.institutions)
+app.include_router(institution_router.create_fastapi_router(), prefix="/institutions")
+
+account_router = AccountRouter(db.accounts, db.institutions)
+app.include_router(account_router.create_fastapi_router(), prefix="/accounts")

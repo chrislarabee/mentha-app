@@ -61,6 +61,11 @@ class BasicRouter(Router, Generic[DomainModelType, InputModelType], ABC):
         )
         router.add_api_route(
             "/",
+            self.get_all,
+            summary=f"Get All {self._plural.title()}",
+        )
+        router.add_api_route(
+            "/",
             self.add,
             summary=f"Add {self._singular.title()}",
             response_model=UUID,
@@ -75,10 +80,7 @@ class BasicRouter(Router, Generic[DomainModelType, InputModelType], ABC):
 
         You must override this method and change the InputModelType TypeVar, above,
         to the appropriate input model for your BasicRouter, otherwise, you will
-        get errors before application startup. Set up the body of the function as:
-
-        result = await super().add(input)
-        return result
+        get errors before application startup.
 
         Args:
             input (InputModelType): The InputModel to create a record based off
@@ -98,16 +100,27 @@ class BasicRouter(Router, Generic[DomainModelType, InputModelType], ABC):
         else:
             return result
 
+    async def get_all(self) -> list[DomainModelType]:
+        """
+        Returns all records from the database.
+
+        You must override this method and change the DomainModelType TypeVar, above,
+        to the appropriate model for your BasicRouter, otherwise, you will
+        get errors before application startup.
+
+        Returns:
+            list[DomainModelType]: The list of all records.
+        """
+        results = await self._table.query_async()
+        return results
+
     async def update(self, id: UUID, input: InputModelType) -> DomainModelType:
         """
         Takes the InputModel and uses it to update an existing record.
 
         You must override this method and change the InputModelType TypeVar, above,
         to the appropriate input model for your BasicRouter, otherwise, you will
-        get errors before application startup. Set up the body of the function as:
-
-        result = await super().update(id, input)
-        return result
+        get errors before application startup.
 
         Args:
             id (UUID): The id of the record to update.
