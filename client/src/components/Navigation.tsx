@@ -130,7 +130,7 @@ export default function Navigation({
     {
       icon: <AccountBalance />,
       label: "Accounts",
-      url: "/",
+      url: "/accounts",
     },
   ];
 

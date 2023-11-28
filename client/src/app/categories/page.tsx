@@ -10,10 +10,10 @@ import {
 } from "@/hooks/categoryHooks";
 import {
   Category,
-  CategoryInput,
   CategoryInputLabels,
   categoryInputSchema,
 } from "@/schemas/category";
+import { SYSTEM_USER } from "@/schemas/shared";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { AltRoute, Delete, Edit, ExpandMore } from "@mui/icons-material";
 import {
@@ -43,12 +43,10 @@ export default function CategoriesPage() {
 
   const defaultValues = {
     name: "",
-    owner: "9b4923d8-53aa-4f40-b602-9e4765420c07",
+    owner: SYSTEM_USER,
   };
 
-  const { data: categories, isLoading } = useCategoriesByOwner(
-    "9b4923d8-53aa-4f40-b602-9e4765420c07"
-  );
+  const { data: categories, isLoading } = useCategoriesByOwner(SYSTEM_USER);
 
   const updateMutation = useUpdateCategory();
   const deleteMutation = useDeleteCategory();

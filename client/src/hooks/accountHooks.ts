@@ -7,40 +7,40 @@ import {
   updateRecord,
 } from "./genericEndpoints";
 import {
-  Category,
-  CategoryInput,
-  PrimaryCategory,
-  categorySchema,
-  primaryCategorySchemaList,
-} from "@/schemas/category";
+  Account,
+  AccountInput,
+  BasicAccount,
+  accountSchemaList,
+  basicAccountSchema,
+} from "@/schemas/account";
 
-const baseEndpoint: BaseEndpoint = "categories";
-const queryKey = "category";
+const baseEndpoint: BaseEndpoint = "accounts";
+const queryKey = "account";
 
-export function useCategory(id: string) {
+export function useAccount(id: string) {
   return useQuery({
     queryKey: [queryKey, id],
     queryFn: async () =>
-      await getRecord<Category>(id, baseEndpoint, categorySchema),
+      await getRecord<BasicAccount>(id, baseEndpoint, basicAccountSchema),
   });
 }
 
-export function useCategoriesByOwner(ownerId: string) {
+export function useAccountsByOwner(ownerId: string) {
   return useQuery({
     queryKey: [queryKey, "by-owner"],
     queryFn: async () =>
-      await getRecordsByOwner<PrimaryCategory>(
+      await getRecordsByOwner<Account>(
         ownerId,
         baseEndpoint,
-        primaryCategorySchemaList
+        accountSchemaList
       ),
   });
 }
 
-export function useUpdateCategory() {
+export function useUpdateAccount() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: CategoryInput) => {
+    mutationFn: async (data: AccountInput) => {
       return updateRecord(data, baseEndpoint);
     },
     onSuccess: () => {
@@ -49,7 +49,7 @@ export function useUpdateCategory() {
   });
 }
 
-export function useDeleteCategory() {
+export function useDeleteAccount() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {

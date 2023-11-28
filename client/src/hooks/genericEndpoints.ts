@@ -1,8 +1,7 @@
-import { subcategorySchema } from "@/schemas/category";
 import { axiosInstance } from "./endpoints";
 import * as yup from "yup";
 
-export type BaseEndpoint = "categories";
+export type BaseEndpoint = "categories" | "institutions" | "accounts";
 
 export async function getRecord<T>(
   id: string,

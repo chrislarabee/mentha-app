@@ -3,44 +3,29 @@ import {
   BaseEndpoint,
   deleteRecord,
   getRecord,
-  getRecordsByOwner,
   updateRecord,
 } from "./genericEndpoints";
 import {
-  Category,
-  CategoryInput,
-  PrimaryCategory,
-  categorySchema,
-  primaryCategorySchemaList,
-} from "@/schemas/category";
+  BasicInstitution,
+  InstitutionInput,
+  institutionSchema,
+} from "@/schemas/institution";
 
-const baseEndpoint: BaseEndpoint = "categories";
-const queryKey = "category";
+const baseEndpoint: BaseEndpoint = "institutions";
+const queryKey = "institution";
 
-export function useCategory(id: string) {
+export function useInstitution(id: string) {
   return useQuery({
     queryKey: [queryKey, id],
     queryFn: async () =>
-      await getRecord<Category>(id, baseEndpoint, categorySchema),
+      await getRecord<BasicInstitution>(id, baseEndpoint, institutionSchema),
   });
 }
 
-export function useCategoriesByOwner(ownerId: string) {
-  return useQuery({
-    queryKey: [queryKey, "by-owner"],
-    queryFn: async () =>
-      await getRecordsByOwner<PrimaryCategory>(
-        ownerId,
-        baseEndpoint,
-        primaryCategorySchemaList
-      ),
-  });
-}
-
-export function useUpdateCategory() {
+export function useUpdateInstitution() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: CategoryInput) => {
+    mutationFn: async (data: InstitutionInput) => {
       return updateRecord(data, baseEndpoint);
     },
     onSuccess: () => {
@@ -49,7 +34,7 @@ export function useUpdateCategory() {
   });
 }
 
-export function useDeleteCategory() {
+export function useDeleteInstitution() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
