@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.domain.account import ACCOUNT_TABLE, Account
 from app.domain.category import CATEGORY_TABLE, Category
-from app.domain.core import DomainModelType
+from app.domain.core import DomainModelT
 from app.domain.institution import INSTITUTION_TABLE, Institution
 from app.storage import utils
 
@@ -79,9 +79,9 @@ class MenthaDB:
 
     def _setup_table(
         self,
-        domain_model: type[DomainModelType],
+        domain_model: type[DomainModelT],
         table: str,
-    ) -> MenthaTable[DomainModelType]:
+    ) -> MenthaTable[DomainModelT]:
         return MenthaTable(
             domain_model=domain_model,
             table=table,
@@ -148,10 +148,10 @@ class Like(QueryOperation):
         return select.where(column.like(self.term))
 
 
-class MenthaTable(Generic[DomainModelType]):
+class MenthaTable(Generic[DomainModelT]):
     def __init__(
         self,
-        domain_model: type[DomainModelType],
+        domain_model: type[DomainModelT],
         table: str,
         metadata: MetaData,
         engine: Engine,
@@ -169,42 +169,42 @@ class MenthaTable(Generic[DomainModelType]):
     def tablename(self) -> str:
         return self._table_name
 
-    def dump_model(self, model: DomainModelType) -> dict[str, Any]:
+    def dump_model(self, model: DomainModelT) -> dict[str, Any]:
         return utils.apply_snake_case(self._domain.model_dump(model))
 
-    def load_row(self, row: sa.RowMapping) -> DomainModelType:
+    def load_row(self, row: sa.RowMapping) -> DomainModelT:
         return self._domain.model_validate(utils.apply_camelcase(dict(row)))
 
     def _gen_get_stmt(self, id: UUID) -> Select[Any]:
         return sa.select(self._table).where(self._table.c[self._pk] == str(id))
 
-    def _return_get_result(self, result: CursorResult[Any]) -> DomainModelType | None:
+    def _return_get_result(self, result: CursorResult[Any]) -> DomainModelT | None:
         row = result.mappings().one_or_none()
         if row:
             return self.load_row(row)
         else:
             return None
 
-    def get(self, id: UUID) -> DomainModelType | None:
+    def get(self, id: UUID) -> DomainModelT | None:
         get_stmt = self._gen_get_stmt(id)
         with self._engine.connect() as conn:
             result = conn.execute(get_stmt)
 
         return self._return_get_result(result)
 
-    async def get_async(self, id: UUID) -> DomainModelType | None:
+    async def get_async(self, id: UUID) -> DomainModelT | None:
         get_stmt = self._gen_get_stmt(id)
         async with self._async_engine.connect() as conn:
             result = await conn.execute(get_stmt)
 
         return self._return_get_result(result)
 
-    def insert(self, *models: DomainModelType) -> None:
+    def insert(self, *models: DomainModelT) -> None:
         rows = [self.dump_model(model) for model in models]
         with self._engine.begin() as conn:
             conn.execute(self._table.insert().values(rows))
 
-    async def insert_async(self, *models: DomainModelType) -> None:
+    async def insert_async(self, *models: DomainModelT) -> None:
         rows = [self.dump_model(model) for model in models]
 
         # AsyncEngine doesn't convert UUIDs to strings like Engine does:
@@ -216,9 +216,7 @@ class MenthaTable(Generic[DomainModelType]):
         async with self._async_engine.begin() as conn:
             await conn.execute(self._table.insert().values(rows))
 
-    def _gen_update_stmt(
-        self, model: DomainModelType, sanitize: bool = False
-    ) -> Update:
+    def _gen_update_stmt(self, model: DomainModelT, sanitize: bool = False) -> Update:
         row = self.dump_model(model)
         id = row.pop(self._pk)
         if sanitize:
@@ -231,12 +229,12 @@ class MenthaTable(Generic[DomainModelType]):
         )
         return update
 
-    def update(self, model: DomainModelType) -> None:
+    def update(self, model: DomainModelT) -> None:
         update_stmt = self._gen_update_stmt(model)
         with self._engine.begin() as conn:
             conn.execute(update_stmt)
 
-    async def update_async(self, model: DomainModelType) -> None:
+    async def update_async(self, model: DomainModelT) -> None:
         update_stmt = self._gen_update_stmt(model, sanitize=True)
         async with self._async_engine.begin() as conn:
             await conn.execute(update_stmt)
@@ -270,7 +268,7 @@ class MenthaTable(Generic[DomainModelType]):
 
         return q
 
-    def query(self, **query_args: QueryOperation | Any) -> list[DomainModelType]:
+    def query(self, **query_args: QueryOperation | Any) -> list[DomainModelT]:
         """
         Runs a query on the table using the passed kwargs. If you pass one of the
         QueryOperations in this module then that special behavior will be used,
@@ -291,7 +289,7 @@ class MenthaTable(Generic[DomainModelType]):
 
     async def query_async(
         self, **query_args: QueryOperation | Any
-    ) -> list[DomainModelType]:
+    ) -> list[DomainModelT]:
         """
         Runs a query on the table using the passed kwargs. If you pass one of the
         QueryOperations in this module then that special behavior will be used,

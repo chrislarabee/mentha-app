@@ -1,7 +1,10 @@
+from typing import TypeVar
 from uuid import UUID
 from app.domain.core import DomainModel, InputModel
 
 INSTITUTION_TABLE = "institutions"
+
+InstitutionT = TypeVar("InstitutionT", UUID, "Institution")
 
 
 class Institution(DomainModel):

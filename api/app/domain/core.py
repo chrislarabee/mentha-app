@@ -3,9 +3,9 @@ from uuid import UUID
 from pydantic import BaseModel
 
 
-DomainModelType = TypeVar("DomainModelType", bound="DomainModel")
-InputModelType = TypeVar("InputModelType", bound="InputModel")
-ModelType = TypeVar("ModelType", "DomainModel", "InputModel")
+DomainModelT = TypeVar("DomainModelT", bound="DomainModel")
+InputModelT = TypeVar("InputModelT", bound="InputModel")
+ModelT = TypeVar("ModelT", "DomainModel", "InputModel")
 
 
 class DomainModel(BaseModel):

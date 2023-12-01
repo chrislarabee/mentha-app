@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, TypeVar
 from uuid import UUID
 
 from app.domain.core import DomainModel, InputModel
@@ -6,6 +6,8 @@ from app.domain.user import SYSTEM_USER
 
 CATEGORY_TABLE = "categories"
 DEFAULT_CATEGORY_ID = UUID("6c47e0cc-b47c-4661-bda3-8e8077fed6c7")
+
+CategoryT = TypeVar("CategoryT", UUID, "Category")
 
 
 class Category(DomainModel):
