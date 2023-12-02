@@ -5,9 +5,9 @@ from fastapi import APIRouter
 from app.domain.account import (
     Account,
     AccountInput,
-    Institution,
     decode_account_input_model,
 )
+from app.domain.institution import Institution
 from app.routes.router import BasicRouter
 from app.storage.db import IsIn, MenthaTable
 
@@ -35,6 +35,7 @@ class AccountRouter(BasicRouter[Account[UUID], AccountInput]):
             self.get_by_owner,
             summary="Get Accounts By Owner",
         )
+
         return router
 
     async def add(self, input: AccountInput) -> UUID:

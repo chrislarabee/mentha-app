@@ -20,6 +20,8 @@ from app.domain.account import ACCOUNT_TABLE, Account
 from app.domain.category import CATEGORY_TABLE, Category
 from app.domain.core import DomainModelT
 from app.domain.institution import INSTITUTION_TABLE, Institution
+from app.domain.rule import RULE_TABLE, Rule
+from app.domain.transaction import TRANSACTION_TABLE, Transaction
 from app.storage import utils
 
 MENTHA_DBNAME = "mentha-db"
@@ -76,6 +78,14 @@ class MenthaDB:
             domain_model=Account[UUID],
             table=ACCOUNT_TABLE,
         )
+        self._rules = self._setup_table(
+            domain_model=Rule[UUID],
+            table=RULE_TABLE,
+        )
+        self._transactions = self._setup_table(
+            domain_model=Transaction[UUID],
+            table=TRANSACTION_TABLE,
+        )
 
     def _setup_table(
         self,
@@ -112,6 +122,14 @@ class MenthaDB:
     def accounts(self) -> MenthaTable[Account[UUID]]:
         return self._accounts
 
+    @property
+    def rules(self) -> MenthaTable[Rule[UUID]]:
+        return self._rules
+
+    @property
+    def transactions(self) -> MenthaTable[Transaction[UUID]]:
+        return self._transactions
+
 
 class QueryOperation(ABC):
     def __init__(self, term: Any) -> None:
@@ -126,7 +144,8 @@ class IsIn(QueryOperation):
     def __init__(self, term: Sequence[Any]) -> None:
         if len(term) > 0 and isinstance(term[0], UUID):
             term = [str(uuid) for uuid in term]
-        super().__init__(term)
+        unique_terms = {*term}
+        super().__init__(unique_terms)
 
     def apply(self, select: Select[Any], column: Column[Any]) -> Select[Any]:
         return select.where(column.in_(self.term))

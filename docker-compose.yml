@@ -13,7 +13,7 @@ services:
     volumes:
       - ./api/docker-entrypoint.sh:/docker-entrypoint.sh
       - ./api/app:/app/app
-      - ./api/imports:/imports
+      - ./api/imports:/app/imports
       - ./api/alembic-mentha-db:/app/alembic-mentha-db
       - ./api/alembic.ini:/app/alembic.ini
       - ./api/tests:/app/tests

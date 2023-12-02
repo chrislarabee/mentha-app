@@ -3,14 +3,14 @@ from __future__ import annotations
 from typing import Generic, Literal, TypeVar
 from uuid import UUID
 from app.domain.core import DomainModel, InputModel
-from app.domain.institution import InstitutionT
+from app.domain.institution import Institution
 
 
 ACCOUNT_TABLE = "accounts"
 
 ACCOUNT_TYPES = ["Checking", "Savings"]
 AccountType = Literal["Checking", "Savings"]
-AccountT = TypeVar("AccountT", UUID, "Account[UUID]")
+InstitutionT = TypeVar("InstitutionT", UUID, Institution)
 
 
 class Account(DomainModel, Generic[InstitutionT]):
