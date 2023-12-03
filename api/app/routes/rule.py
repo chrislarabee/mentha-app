@@ -2,6 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter
 from app.domain.category import SYSTEM_CATEGORIES, Category
+from app.domain.core import PagedResultsModel
 from app.domain.rule import Rule, RuleInput, decode_rule_input_model
 from app.routes.router import BasicRouter
 from app.storage.db import IsIn, MenthaTable
@@ -26,7 +27,7 @@ class RuleRouter(BasicRouter[Rule[UUID], RuleInput]):
         router = super().create_fastapi_router()
 
         router.add_api_route(
-            "/by-owner/{owner_id}",
+            "/by-owner/{ownerId}",
             self.get_by_owner,
             summary="Get Rules By Owner",
         )
@@ -39,22 +40,25 @@ class RuleRouter(BasicRouter[Rule[UUID], RuleInput]):
     async def update(self, id: UUID, input: RuleInput) -> Rule[UUID]:
         return await super().update(id, input)
 
-    async def get_all(self) -> list[Rule[UUID]]:
-        return await super().get_all()
+    async def get_all(
+        self, page: int = 1, pageSize: int = 50
+    ) -> PagedResultsModel[Rule[UUID]]:
+        return await super().get_all(page, pageSize)
 
-    async def get_by_owner(self, owner_id: UUID) -> list[Rule[Category]]:
-        raw_results = await self._table.query_async(owner=owner_id)
-        categories = await self._cat_table.query_async(
-            id=IsIn([row.resultCategory for row in raw_results])
+    async def get_by_owner(self, ownerId: UUID) -> PagedResultsModel[Rule[Category]]:
+        raw_results = await self._table.query_async(owner=ownerId)
+        cat_result = await self._cat_table.query_async(
+            id=IsIn([row.resultCategory for row in raw_results.results])
         )
-        cat_dict = {cat.id: cat for cat in [*categories, *SYSTEM_CATEGORIES]}
-        return [
-            Rule(
+        categories = {cat.id: cat for cat in [*cat_result.results, *SYSTEM_CATEGORIES]}
+
+        def _transform(rule: Rule[UUID]) -> Rule[Category]:
+            return Rule(
                 id=rule.id,
                 priority=rule.priority,
-                resultCategory=cat_dict[rule.resultCategory],
+                resultCategory=categories[rule.resultCategory],
                 owner=rule.owner,
                 matchName=rule.matchName,
             )
-            for rule in raw_results
-        ]
+
+        return raw_results.broadcast_transform(_transform)

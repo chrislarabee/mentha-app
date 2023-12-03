@@ -32,7 +32,10 @@ export default function AccountsPage() {
   const institutionAccordions = accounts && (
     <List>
       {Object.entries(
-        convertArrayToRecordOfArrays(accounts, (acct) => acct.institution.name)
+        convertArrayToRecordOfArrays(
+          accounts.results,
+          (acct) => acct.institution.name
+        )
       ).map(([instName, accts]) => (
         <Accordion key={instName} disableGutters>
           <AccordionSummary expandIcon={<ExpandMore />}>

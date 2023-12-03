@@ -1,3 +1,4 @@
+import { PagedResults } from "@/schemas/shared";
 import { axiosInstance } from "./endpoints";
 import * as yup from "yup";
 
@@ -22,7 +23,7 @@ export async function getRecordsByOwner<T>(
   ownerId: string,
   base: BaseEndpoint,
   schema: yup.Schema
-): Promise<T[]> {
+): Promise<PagedResults<T>> {
   const resp = await axiosInstance.get(`/${base}/by-owner/${ownerId}`, {});
   const results = await schema.validate(resp.data);
   return results;

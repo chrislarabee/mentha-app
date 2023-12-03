@@ -10,8 +10,8 @@ import {
   Account,
   AccountInput,
   BasicAccount,
-  accountSchemaList,
   basicAccountSchema,
+  pagedAccountsSchema,
 } from "@/schemas/account";
 
 const baseEndpoint: BaseEndpoint = "accounts";
@@ -32,7 +32,7 @@ export function useAccountsByOwner(ownerId: string) {
       await getRecordsByOwner<Account>(
         ownerId,
         baseEndpoint,
-        accountSchemaList
+        pagedAccountsSchema
       ),
   });
 }

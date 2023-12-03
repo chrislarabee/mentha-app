@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 
-from app.domain.core import DomainModelT, InputModelT
+from app.domain.core import DomainModelT, InputModelT, PagedResultsModel
 from app.storage.db import MenthaTable
 
 
@@ -100,7 +100,9 @@ class BasicRouter(Router, Generic[DomainModelT, InputModelT], ABC):
         else:
             return result
 
-    async def get_all(self) -> list[DomainModelT]:
+    async def get_all(
+        self, page: int = 1, pageSize: int = 50
+    ) -> PagedResultsModel[DomainModelT]:
         """
         Returns all records from the database.
 
@@ -108,10 +110,14 @@ class BasicRouter(Router, Generic[DomainModelT, InputModelT], ABC):
         to the appropriate model for your BasicRouter, otherwise, you will
         get errors before application startup.
 
+        Args:
+            page (int, optional): Page of results to return. Defaults to 1.
+            pageSize (int, optional): Page size of results to return. Defaults to 50.
+
         Returns:
-            list[DomainModelT]: The list of all records.
+            PagedResultsModel[DomainModelT]: The paginated results.
         """
-        results = await self._table.query_async()
+        results = await self._table.query_async(page=page, page_size=pageSize)
         return results
 
     async def update(self, id: UUID, input: InputModelT) -> DomainModelT:

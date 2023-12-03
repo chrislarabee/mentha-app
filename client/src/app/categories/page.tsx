@@ -113,7 +113,7 @@ export default function CategoriesPage() {
 
   const categoryAccordions = categories && (
     <List>
-      {categories.map((cat) => (
+      {categories.results.map((cat) => (
         <Accordion key={cat.id} disableGutters>
           <AccordionSummary expandIcon={<ExpandMore />}>
             <Typography variant="subtitle1">{cat.name}</Typography>
@@ -183,7 +183,7 @@ export default function CategoriesPage() {
   const parentCategoryReassignment = categories && (
     <Stack spacing={1}>
       <Autocomplete
-        options={categories
+        options={categories.results
           .filter((cat) => cat.id !== getValues().id)
           .map((cat) => ({
             id: cat.id,

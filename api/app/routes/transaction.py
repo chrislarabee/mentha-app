@@ -2,6 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter
 from app.domain.category import SYSTEM_CATEGORIES, Category
+from app.domain.core import PagedResultsModel
 from app.domain.transaction import (
     Transaction,
     TransactionInput,
@@ -27,12 +28,12 @@ class TransactionRouter(BasicRouter[Transaction[UUID], TransactionInput]):
         router = super().create_fastapi_router()
 
         router.add_api_route(
-            "/by-owner/{owner_id}",
+            "/by-owner/{ownerId}",
             self.get_by_owner,
             summary="Get Transactions By Owner",
         )
         router.add_api_route(
-            "/import/{owner_id}",
+            "/import/{ownerId}",
             self.import_transactions,
             summary="Import Transactions For Owner",
             methods=["POST"],
@@ -46,30 +47,37 @@ class TransactionRouter(BasicRouter[Transaction[UUID], TransactionInput]):
     async def update(self, id: UUID, input: TransactionInput) -> Transaction[UUID]:
         return await super().update(id, input)
 
-    async def get_all(self) -> list[Transaction[UUID]]:
-        return await super().get_all()
+    async def get_all(
+        self, page: int = 1, pageSize: int = 50
+    ) -> PagedResultsModel[Transaction[UUID]]:
+        return await super().get_all(page, pageSize)
 
-    async def get_by_owner(self, owner_id: UUID) -> list[Transaction[Category]]:
-        raw_results = await self._table.query_async(owner=owner_id)
-        categories = await self._db.categories.query_async(
-            id=IsIn([row.category for row in raw_results])
+    async def get_by_owner(
+        self, ownerId: UUID, page: int = 1, pageSize: int = 50
+    ) -> PagedResultsModel[Transaction[Category]]:
+        raw_results = await self._table.query_async(
+            page=page, page_size=pageSize, owner=ownerId
         )
-        cat_dict = {cat.id: cat for cat in [*categories, *SYSTEM_CATEGORIES]}
-        return [
-            Transaction(
+        cat_result = await self._db.categories.query_async(
+            id=IsIn([row.category for row in raw_results.results])
+        )
+        categories = {cat.id: cat for cat in [*cat_result.results, *SYSTEM_CATEGORIES]}
+
+        def _transform(tran: Transaction[UUID]) -> Transaction[Category]:
+            return Transaction(
                 id=tran.id,
                 fitId=tran.fitId,
                 amt=tran.amt,
                 date=tran.date,
                 name=tran.name,
-                category=cat_dict[tran.category],
+                category=categories[tran.category],
                 account=tran.category,
                 owner=tran.owner,
             )
-            for tran in raw_results
-        ]
 
-    async def import_transactions(self, owner_id: UUID) -> None:
-        importer = Importer(for_owner=owner_id, db=self._db)
+        return raw_results.broadcast_transform(_transform)
+
+    async def import_transactions(self, ownerId: UUID) -> None:
+        importer = Importer(for_owner=ownerId, db=self._db)
         await importer.refresh_rules()
         await importer.execute()

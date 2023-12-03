@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.domain.account import ACCOUNT_TABLE, Account
 from app.domain.category import CATEGORY_TABLE, Category
-from app.domain.core import DomainModelT
+from app.domain.core import DomainModelT, PagedResultsModel
 from app.domain.institution import INSTITUTION_TABLE, Institution
 from app.domain.rule import RULE_TABLE, Rule
 from app.domain.transaction import TRANSACTION_TABLE, Transaction
@@ -275,8 +275,18 @@ class MenthaTable(Generic[DomainModelT]):
             async with self._async_engine.begin() as conn:
                 await conn.execute(delete_stmt)
 
-    def _generate_query(self, **query_args: QueryOperation | Any) -> Select[Any]:
+    def _generate_query(
+        self,
+        page: int,
+        page_size: int | None,
+        **query_args: QueryOperation | Any,
+    ) -> tuple[Select[Any], int | None]:
         q = self._table.select()
+        mod_pg_size = page_size
+        if page_size:
+            mod_pg_size = page_size + 1
+            q = q.limit(mod_pg_size)
+            q = q.offset((page - 1) * page_size)
 
         for field, arg in query_args.items():
             if isinstance(arg, QueryOperation):
@@ -285,9 +295,32 @@ class MenthaTable(Generic[DomainModelT]):
                 arg = str(arg) if isinstance(arg, UUID) else arg
                 q = q.where(self._table.c[field] == arg)
 
-        return q
+        return q, mod_pg_size
 
-    def query(self, **query_args: QueryOperation | Any) -> list[DomainModelT]:
+    @staticmethod
+    def _postprocess_query_result(
+        page: int, page_size: int | None, result: list[DomainModelT]
+    ) -> PagedResultsModel[DomainModelT]:
+        hasNext = False
+        page_size = page_size if page_size is None else page_size - 1
+        if page_size is not None:
+            hasNext = False if len(result) < page_size else True
+            result = result[:page_size]
+        return PagedResultsModel(
+            results=result,
+            hitCount=len(result),
+            page=page,
+            pageSize=page_size,
+            hasNext=hasNext,
+            hasPrev=page > 1,
+        )
+
+    def query(
+        self,
+        page: int = 1,
+        page_size: int | None = None,
+        **query_args: QueryOperation | Any,
+    ) -> PagedResultsModel[DomainModelT]:
         """
         Runs a query on the table using the passed kwargs. If you pass one of the
         QueryOperations in this module then that special behavior will be used,
@@ -298,17 +331,22 @@ class MenthaTable(Generic[DomainModelT]):
             list[DomainModelType]: The list of Domain Models matching your query,
             if any.
         """
-        q = self._generate_query(**query_args)
+        q, page_size = self._generate_query(
+            page=page, page_size=page_size, **query_args
+        )
 
         with self._engine.connect() as conn:
             result = conn.execute(q)
             rows = [self.load_row(row) for row in result.mappings()]
 
-        return rows
+        return self._postprocess_query_result(page, page_size, rows)
 
     async def query_async(
-        self, **query_args: QueryOperation | Any
-    ) -> list[DomainModelT]:
+        self,
+        page: int = 1,
+        page_size: int | None = None,
+        **query_args: QueryOperation | Any,
+    ) -> PagedResultsModel[DomainModelT]:
         """
         Runs a query on the table using the passed kwargs. If you pass one of the
         QueryOperations in this module then that special behavior will be used,
@@ -319,13 +357,15 @@ class MenthaTable(Generic[DomainModelT]):
             list[DomainModelType]: The list of Domain Models matching your query,
             if any.
         """
-        q = self._generate_query(**query_args)
+        q, page_size = self._generate_query(
+            page=page, page_size=page_size, **query_args
+        )
 
         async with self._async_engine.connect() as conn:
             result = await conn.execute(q)
             rows = [self.load_row(row) for row in result.mappings()]
 
-        return rows
+        return self._postprocess_query_result(page, page_size, rows)
 
     @staticmethod
     def _reflect_table(table: str, metadata: MetaData, engine: Engine) -> Table:

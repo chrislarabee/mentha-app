@@ -1,5 +1,5 @@
 import * as yup from "yup";
-import { Labels } from "./shared";
+import { Labels, pagedResultsSchema } from "./shared";
 import { institutionSchema } from "./institution";
 
 const accountType = ["Checking", "Savings"] as const;
@@ -24,6 +24,10 @@ export const accountSchema = basicAccountSchema.shape({
 
 export const accountSchemaList = yup.array().of(accountSchema).required();
 
+export const pagedAccountsSchema = pagedResultsSchema.shape({
+  results: accountSchemaList,
+});
+
 export type AccountType = (typeof accountType)[number];
 
 export type BasicAccount = yup.InferType<typeof basicAccountSchema>;
@@ -31,7 +35,6 @@ export type BasicAccount = yup.InferType<typeof basicAccountSchema>;
 export type Account = yup.InferType<typeof accountSchema>;
 
 export type AccountInput = yup.InferType<typeof accountInputSchema>;
-
 
 export const AccountInputLabels: Labels<AccountInput> = {
   id: "ID",

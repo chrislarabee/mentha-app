@@ -3,13 +3,13 @@ from uuid import UUID
 from fastapi import APIRouter
 
 from app.domain.category import (
-    INCOME,
-    UNCATEGORIZED,
+    SYSTEM_CATEGORIES,
     Category,
     CategoryInput,
     PrimaryCategory,
     decode_category_input_model,
 )
+from app.domain.core import PagedResultsModel
 from app.routes import utils
 from app.routes.router import BasicRouter
 from app.storage.db import MenthaTable
@@ -29,7 +29,7 @@ class CategoryRouter(BasicRouter[Category, CategoryInput]):
         router = super().create_fastapi_router()
 
         router.add_api_route(
-            "/by-owner/{owner_id}",
+            "/by-owner/{ownerId}",
             self.get_by_owner,
             summary="Get Categories By Owner",
         )
@@ -42,11 +42,17 @@ class CategoryRouter(BasicRouter[Category, CategoryInput]):
     async def update(self, id: UUID, input: CategoryInput) -> Category:
         return await super().update(id, input)
 
-    async def get_all(self) -> list[Category]:
-        return await super().get_all()
+    async def get_all(
+        self, page: int = 1, pageSize: int = 50
+    ) -> PagedResultsModel[Category]:
+        return await super().get_all(page, pageSize)
 
-    async def get_by_owner(self, owner_id: UUID) -> list[PrimaryCategory]:
-        raw = await self._table.query_async(owner=owner_id)
-        # All owners are considered owners of the base system categories:
-        raw += [INCOME, UNCATEGORIZED]
-        return utils.assemble_primary_categories(raw)
+    async def get_by_owner(self, ownerId: UUID) -> PagedResultsModel[PrimaryCategory]:
+        raw_result = await self._table.query_async(owner=ownerId)
+
+        def _transform(results: list[Category]) -> list[PrimaryCategory]:
+            # All owners are considered owners of the base system categories:
+            results += SYSTEM_CATEGORIES
+            return utils.assemble_primary_categories(results)
+
+        return raw_result.transform(_transform)

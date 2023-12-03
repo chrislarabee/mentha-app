@@ -11,7 +11,7 @@ import {
   CategoryInput,
   PrimaryCategory,
   categorySchema,
-  primaryCategorySchemaList,
+  pagedCategoriesSchema,
 } from "@/schemas/category";
 
 const baseEndpoint: BaseEndpoint = "categories";
@@ -32,7 +32,7 @@ export function useCategoriesByOwner(ownerId: string) {
       await getRecordsByOwner<PrimaryCategory>(
         ownerId,
         baseEndpoint,
-        primaryCategorySchemaList
+        pagedCategoriesSchema
       ),
   });
 }

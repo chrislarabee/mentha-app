@@ -1,5 +1,5 @@
 import * as yup from "yup";
-import { Labels } from "./shared";
+import { Labels, pagedResultsSchema } from "./shared";
 
 export const categorySchema = yup.object({
   id: yup.string().required(),
@@ -27,6 +27,10 @@ export const primaryCategorySchemaList = yup
   .array()
   .of(primaryCategorySchema)
   .required();
+
+export const pagedCategoriesSchema = pagedResultsSchema.shape({
+  results: primaryCategorySchemaList,
+});
 
 export type Category = yup.InferType<typeof categorySchema>;
 

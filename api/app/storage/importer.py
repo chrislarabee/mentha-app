@@ -29,13 +29,17 @@ class Importer:
         self._rules = list[Rule[UUID]]()
 
     async def refresh_rules(self) -> None:
-        self._rules = await self._db.rules.query_async(owner=self._owner)
+        q_result = await self._db.rules.query_async(owner=self._owner)
+        self._rules = q_result.results
         self._rules.sort(key=lambda rule: rule.priority)
 
     async def execute(self) -> None:
         for filepath in Path(IMPORT_FILES).iterdir():
             ofx_file = read_ofx_file(filepath)
-            insts = await self._db.institutions.query_async(fit_id=ofx_file.bank_id)
+            inst_result = await self._db.institutions.query_async(
+                fit_id=ofx_file.bank_id
+            )
+            insts = inst_result.results
             # This is done first because there is no guarantee that two given
             # financial institutions will have universally unique account ids.
             if len(insts) == 0:
@@ -45,9 +49,10 @@ class Importer:
                 )
             else:
                 inst = insts[0]
-            accts = await self._db.accounts.query_async(
+            acct_result = await self._db.accounts.query_async(
                 fit_id=ofx_file.acct_id, institution=inst.id
             )
+            accts = acct_result.results
             if len(accts) == 0:
                 acct = self.create_acct_from_ofx_file(ofx_file, self._owner, inst.id)
                 await self._db.accounts.insert_async(acct)
