@@ -275,11 +275,24 @@ class MenthaTable(Generic[DomainModelT]):
             async with self._async_engine.begin() as conn:
                 await conn.execute(delete_stmt)
 
+    def _apply_query_args(
+        self,
+        q: Select[Any],
+        q_args: dict[str, QueryOperation | Any],
+    ) -> Select[Any]:
+        for field, arg in q_args.items():
+            if isinstance(arg, QueryOperation):
+                q = arg.apply(q, self._table.c[field])
+            else:
+                arg = str(arg) if isinstance(arg, UUID) else arg
+                q = q.where(self._table.c[field] == arg)
+        return q
+
     def _generate_query(
         self,
         page: int,
         page_size: int | None,
-        **query_args: QueryOperation | Any,
+        q_args: dict[str, QueryOperation | Any],
     ) -> tuple[Select[Any], int | None]:
         q = self._table.select()
         mod_pg_size = page_size
@@ -288,26 +301,25 @@ class MenthaTable(Generic[DomainModelT]):
             q = q.limit(mod_pg_size)
             q = q.offset((page - 1) * page_size)
 
-        for field, arg in query_args.items():
-            if isinstance(arg, QueryOperation):
-                q = arg.apply(q, self._table.c[field])
-            else:
-                arg = str(arg) if isinstance(arg, UUID) else arg
-                q = q.where(self._table.c[field] == arg)
+        q = self._apply_query_args(q, q_args)
 
         return q, mod_pg_size
 
     @staticmethod
     def _postprocess_query_result(
-        page: int, page_size: int | None, result: list[DomainModelT]
+        total_hit_count: int,
+        page: int,
+        page_size: int | None,
+        result: list[DomainModelT],
     ) -> PagedResultsModel[DomainModelT]:
         hasNext = False
         page_size = page_size if page_size is None else page_size - 1
         if page_size is not None:
-            hasNext = False if len(result) < page_size else True
+            hasNext = True if page * page_size < total_hit_count else False
             result = result[:page_size]
         return PagedResultsModel(
             results=result,
+            totalHitCount=total_hit_count,
             hitCount=len(result),
             page=page,
             pageSize=page_size,
@@ -332,14 +344,16 @@ class MenthaTable(Generic[DomainModelT]):
             if any.
         """
         q, page_size = self._generate_query(
-            page=page, page_size=page_size, **query_args
+            page=page, page_size=page_size, q_args=query_args
         )
+        count_q = self._generate_count_query(query_args)
 
         with self._engine.connect() as conn:
+            count = conn.execute(count_q).scalar_one()
             result = conn.execute(q)
             rows = [self.load_row(row) for row in result.mappings()]
 
-        return self._postprocess_query_result(page, page_size, rows)
+        return self._postprocess_query_result(count, page, page_size, rows)
 
     async def query_async(
         self,
@@ -358,14 +372,39 @@ class MenthaTable(Generic[DomainModelT]):
             if any.
         """
         q, page_size = self._generate_query(
-            page=page, page_size=page_size, **query_args
+            page=page, page_size=page_size, q_args=query_args
         )
+        count_q = self._generate_count_query(query_args)
 
         async with self._async_engine.connect() as conn:
+            count_result = await conn.execute(count_q)
+            count = count_result.scalar_one()
             result = await conn.execute(q)
             rows = [self.load_row(row) for row in result.mappings()]
 
-        return self._postprocess_query_result(page, page_size, rows)
+        return self._postprocess_query_result(count, page, page_size, rows)
+
+    def _generate_count_query(
+        self, query_args: dict[str, QueryOperation | Any]
+    ) -> Select[Any]:
+        q = self._table.select()
+        q = q.with_only_columns(sa.func.count(self._table.columns[self._pk]))
+        q = self._apply_query_args(q, query_args)
+        return q
+
+    def count(self, **query_args: QueryOperation | Any) -> int:
+        q = self._generate_count_query(query_args)
+        with self._engine.connect() as conn:
+            result = conn.execute(q)
+
+        return result.scalar_one()
+
+    async def count_async(self, **query_args: QueryOperation | Any) -> int:
+        q = self._generate_count_query(query_args)
+        async with self._async_engine.connect() as conn:
+            result = await conn.execute(q)
+
+        return result.scalar_one()
 
     @staticmethod
     def _reflect_table(table: str, metadata: MetaData, engine: Engine) -> Table:

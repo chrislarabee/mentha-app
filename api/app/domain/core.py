@@ -22,6 +22,7 @@ class InputModel(BaseModel):
 class PagedResultsModel(BaseModel, Generic[DomainModelT]):
     results: list[DomainModelT]
     hitCount: int
+    totalHitCount: int
     page: int
     pageSize: int | None
     hasNext: bool
@@ -39,6 +40,7 @@ class PagedResultsModel(BaseModel, Generic[DomainModelT]):
         return PagedResultsModel(
             results=tf(self.results),
             hitCount=self.hitCount,
+            totalHitCount=self.totalHitCount,
             page=self.page,
             pageSize=self.pageSize,
             hasNext=self.hasNext,
