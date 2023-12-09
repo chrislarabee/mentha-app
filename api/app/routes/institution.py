@@ -1,5 +1,5 @@
 from uuid import UUID
-from app.domain.core import PagedResultsModel
+from app.domain.core import PagedResultsModel, QueryModel
 from app.domain.institution import (
     Institution,
     InstitutionInput,
@@ -30,6 +30,6 @@ class InstitutionRouter(BasicRouter[Institution, InstitutionInput]):
         return await super().update(id, input)
 
     async def get_all(
-        self, page: int = 1, pageSize: int = 50
+        self, query: QueryModel, page: int = 1, pageSize: int = 50
     ) -> PagedResultsModel[Institution]:
-        return await super().get_all(page, pageSize)
+        return await super().get_all(query, page, pageSize)

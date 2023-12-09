@@ -7,13 +7,16 @@ from app.domain.account import (
     AccountInput,
     decode_account_input_model,
 )
-from app.domain.core import PagedResultsModel
+from app.domain.core import PagedResultsModel, QueryModel
 from app.domain.institution import Institution
-from app.routes.router import BasicRouter
+from app.routes.router import BasicRouter, ByOwnerMethods
+from app.routes.utils import preprocess_filters
 from app.storage.db import IsIn, MenthaTable
 
 
-class AccountRouter(BasicRouter[Account[UUID], AccountInput]):
+class AccountRouter(
+    BasicRouter[Account[UUID], AccountInput], ByOwnerMethods[Account[Institution]]
+):
     def __init__(
         self,
         account_table: MenthaTable[Account[UUID]],
@@ -30,13 +33,7 @@ class AccountRouter(BasicRouter[Account[UUID], AccountInput]):
 
     def create_fastapi_router(self) -> APIRouter:
         router = super().create_fastapi_router()
-
-        router.add_api_route(
-            "/by-owner/{ownerId}",
-            self.get_by_owner,
-            summary="Get Accounts By Owner",
-        )
-
+        self.apply_methods_to_fastapi_router(router, self._plural)
         return router
 
     async def add(self, input: AccountInput) -> UUID:
@@ -46,15 +43,19 @@ class AccountRouter(BasicRouter[Account[UUID], AccountInput]):
         return await super().update(id, input)
 
     async def get_all(
-        self, page: int = 1, pageSize: int = 50
+        self, query: QueryModel, page: int = 1, pageSize: int = 50
     ) -> PagedResultsModel[Account[UUID]]:
-        return await super().get_all(page, pageSize)
+        return await super().get_all(query, page, pageSize)
 
     async def get_by_owner(
-        self, ownerId: UUID, page: int = 1, pageSize: int = 50
+        self, ownerId: UUID, query: QueryModel, page: int = 1, pageSize: int = 50
     ) -> PagedResultsModel[Account[Institution]]:
         raw_results = await self._table.query_async(
-            page=page, page_size=pageSize, owner=ownerId
+            page=page,
+            page_size=pageSize,
+            sorts=query.sorts,
+            owner=ownerId,
+            **preprocess_filters(query.filters)
         )
         inst_result = await self._inst_table.query_async(
             id=IsIn([row.institution for row in raw_results.results])

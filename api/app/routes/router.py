@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 
-from app.domain.core import DomainModelT, InputModelT, PagedResultsModel
+from app.domain.core import DomainModelT, InputModelT, PagedResultsModel, QueryModel
 from app.storage.db import MenthaTable
 
 
@@ -63,6 +63,7 @@ class BasicRouter(Router, Generic[DomainModelT, InputModelT], ABC):
             "/",
             self.get_all,
             summary=f"Get All {self._plural.title()}",
+            methods=["POST"],
         )
         router.add_api_route(
             "/",
@@ -101,7 +102,7 @@ class BasicRouter(Router, Generic[DomainModelT, InputModelT], ABC):
             return result
 
     async def get_all(
-        self, page: int = 1, pageSize: int = 50
+        self, query: QueryModel, page: int = 1, pageSize: int = 50
     ) -> PagedResultsModel[DomainModelT]:
         """
         Returns all records from the database.
@@ -117,7 +118,9 @@ class BasicRouter(Router, Generic[DomainModelT, InputModelT], ABC):
         Returns:
             PagedResultsModel[DomainModelT]: The paginated results.
         """
-        results = await self._table.query_async(page=page, page_size=pageSize)
+        results = await self._table.query_async(
+            page=page, page_size=pageSize, sorts=query.sorts
+        )
         return results
 
     async def update(self, id: UUID, input: InputModelT) -> DomainModelT:
@@ -153,3 +156,26 @@ class BasicRouter(Router, Generic[DomainModelT, InputModelT], ABC):
     async def delete(self, id: UUID) -> JSONResponse:
         await self._table.delete_async(id)
         return JSONResponse(f"{id} successfully deleted", status_code=204)
+
+
+class ByOwnerMethods(Generic[DomainModelT], ABC):
+    def apply_methods_to_fastapi_router(
+        self, router: APIRouter, plural_name: str
+    ) -> APIRouter:
+        router.add_api_route(
+            "/by-owner/{ownerId}",
+            self.get_by_owner,
+            summary=f"Get {plural_name} By Owner",
+            methods=["POST"],
+        )
+        return router
+
+    @abstractmethod
+    async def get_by_owner(
+        self,
+        ownerId: UUID,
+        query: QueryModel,
+        page: int = 1,
+        pageSize: int = 50,
+    ) -> PagedResultsModel[DomainModelT]:
+        return NotImplemented

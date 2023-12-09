@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Callable, Generic, Optional, TypeVar
+from typing import Any, Callable, Generic, Literal, Optional, TypeVar
 from uuid import UUID
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 DomainModelT = TypeVar("DomainModelT", bound="DomainModel")
@@ -54,3 +54,27 @@ class PagedResultsModel(BaseModel, Generic[DomainModelT]):
             hasNext=self.hasNext,
             hasPrev=self.hasPrev,
         )
+
+
+SortDirection = Literal["asc", "desc"]
+FilterOperator = Literal["=", ">", "<", ">=", "<=", "like"]
+
+
+class SortModel(BaseModel):
+    field: str
+    direction: SortDirection = "asc"
+
+
+class FilterModel(BaseModel):
+    field: str
+    op: FilterOperator = "="
+    term: Any
+
+
+class QueryModel(BaseModel):
+    sorts: list[SortModel] = Field(default_factory=list)
+    filters: list[FilterModel] = Field(
+        default_factory=list,
+        description="If you want to supply a date `term` must be in the format "
+        "YYYY/MM/DD or YYYY-MM-DD",
+    )

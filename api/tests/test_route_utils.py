@@ -1,5 +1,7 @@
+from datetime import datetime
 from uuid import UUID
 from app.domain.category import Category, PrimaryCategory, Subcategory
+from app.domain.core import FilterModel
 from app.domain.user import SYSTEM_USER
 from app.routes import utils
 
@@ -67,3 +69,20 @@ def test_assemble_primary_categories():
             ],
         ),
     ]
+
+
+def test_preprocess_filters():
+    raw = [
+        FilterModel(field="foo", op="=", term="prueba"),
+        FilterModel(field="bar", op="=", term="123"),
+        FilterModel(field="spam", op="=", term="1.23"),
+        FilterModel(field="eggs", op="<", term="2023-12-09"),
+        FilterModel(field="eggz", op=">", term="2023/12/01"),
+    ]
+    assert utils.preprocess_filters(raw) == {
+        "foo": FilterModel(field="foo", op="=", term="prueba"),
+        "bar": FilterModel(field="bar", op="=", term=123),
+        "spam": FilterModel(field="spam", op="=", term=1.23),
+        "eggs": FilterModel(field="eggs", op="<", term=datetime(2023, 12, 9).date()),
+        "eggz": FilterModel(field="eggz", op=">", term=datetime(2023, 12, 1).date()),
+    }

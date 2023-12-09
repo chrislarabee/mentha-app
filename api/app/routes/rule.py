@@ -1,14 +1,16 @@
 from uuid import UUID
 
 from fastapi import APIRouter
+
 from app.domain.category import SYSTEM_CATEGORIES, Category
-from app.domain.core import PagedResultsModel
+from app.domain.core import PagedResultsModel, QueryModel
 from app.domain.rule import Rule, RuleInput, decode_rule_input_model
-from app.routes.router import BasicRouter
+from app.routes.router import BasicRouter, ByOwnerMethods
+from app.routes.utils import preprocess_filters
 from app.storage.db import IsIn, MenthaTable
 
 
-class RuleRouter(BasicRouter[Rule[UUID], RuleInput]):
+class RuleRouter(BasicRouter[Rule[UUID], RuleInput], ByOwnerMethods[Rule[Category]]):
     def __init__(
         self,
         rule_table: MenthaTable[Rule[UUID]],
@@ -25,13 +27,7 @@ class RuleRouter(BasicRouter[Rule[UUID], RuleInput]):
 
     def create_fastapi_router(self) -> APIRouter:
         router = super().create_fastapi_router()
-
-        router.add_api_route(
-            "/by-owner/{ownerId}",
-            self.get_by_owner,
-            summary="Get Rules By Owner",
-        )
-
+        self.apply_methods_to_fastapi_router(router, self._plural)
         return router
 
     async def add(self, input: RuleInput) -> UUID:
@@ -41,12 +37,20 @@ class RuleRouter(BasicRouter[Rule[UUID], RuleInput]):
         return await super().update(id, input)
 
     async def get_all(
-        self, page: int = 1, pageSize: int = 50
+        self, query: QueryModel, page: int = 1, pageSize: int = 50
     ) -> PagedResultsModel[Rule[UUID]]:
-        return await super().get_all(page, pageSize)
+        return await super().get_all(query, page, pageSize)
 
-    async def get_by_owner(self, ownerId: UUID) -> PagedResultsModel[Rule[Category]]:
-        raw_results = await self._table.query_async(owner=ownerId)
+    async def get_by_owner(
+        self, ownerId: UUID, query: QueryModel, page: int = 1, pageSize: int = 50
+    ) -> PagedResultsModel[Rule[Category]]:
+        raw_results = await self._table.query_async(
+            page=page,
+            page_size=pageSize,
+            sorts=query.sorts,
+            owner=ownerId,
+            **preprocess_filters(query.filters)
+        )
         cat_result = await self._cat_table.query_async(
             id=IsIn([row.resultCategory for row in raw_results.results])
         )
@@ -59,6 +63,7 @@ class RuleRouter(BasicRouter[Rule[UUID], RuleInput]):
                 resultCategory=categories[rule.resultCategory],
                 owner=rule.owner,
                 matchName=rule.matchName,
+                matchAmt=rule.matchAmt,
             )
 
         return raw_results.broadcast_transform(_transform)

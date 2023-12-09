@@ -18,7 +18,12 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.domain.account import ACCOUNT_TABLE, Account
 from app.domain.category import CATEGORY_TABLE, Category
-from app.domain.core import DomainModelT, PagedResultsModel
+from app.domain.core import (
+    DomainModelT,
+    FilterModel,
+    PagedResultsModel,
+    SortModel,
+)
 from app.domain.institution import INSTITUTION_TABLE, Institution
 from app.domain.rule import RULE_TABLE, Rule
 from app.domain.transaction import TRANSACTION_TABLE, Transaction
@@ -138,6 +143,21 @@ class QueryOperation(ABC):
     @abstractmethod
     def apply(self, select: Select[Any], column: Column[Any]) -> Select[Any]:
         return NotImplemented
+
+
+# Keeping these distinct from domain.core.FilterOperator in case like/between/in
+# are added as allowed FilterOperators (they would not be allowed here):
+SIMPLE_OPS = ["=", ">", "<", ">=", "<="]
+SimpleOperator = Literal["=", ">", "<", ">=", "<="]
+
+
+class SimpleOp(QueryOperation):
+    def __init__(self, term: Any, op: SimpleOperator) -> None:
+        super().__init__(term)
+        self.op = op
+
+    def apply(self, select: Select[Any], column: Column[Any]) -> Select[Any]:
+        return select.where(column.bool_op(self.op)(self.term))
 
 
 class IsIn(QueryOperation):
@@ -278,31 +298,53 @@ class MenthaTable(Generic[DomainModelT]):
     def _apply_query_args(
         self,
         q: Select[Any],
-        q_args: dict[str, QueryOperation | Any],
+        q_args: dict[str, QueryOperation | FilterModel | Any],
     ) -> Select[Any]:
         for field, arg in q_args.items():
+            field = utils.apply_snake_case(field)
             if isinstance(arg, QueryOperation):
                 q = arg.apply(q, self._table.c[field])
+            elif isinstance(arg, FilterModel):
+                if arg.op == "like":
+                    q = Like(arg.term).apply(q, self._table.c[field])
+                elif arg.op in SIMPLE_OPS:
+                    q = SimpleOp(arg.term, arg.op).apply(q, self._table.c[field])
             else:
                 arg = str(arg) if isinstance(arg, UUID) else arg
                 q = q.where(self._table.c[field] == arg)
         return q
 
+    def _construct_col_sort(self, s: str | SortModel) -> sa.ColumnElement[Any]:
+        if isinstance(s, SortModel):
+            column = self._table.c[utils.apply_snake_case(s.field)]
+            return sa.desc(column) if s.direction == "desc" else column
+        else:
+            return self._table.c[utils.apply_snake_case(s)]
+
+    def _apply_sorts(
+        self,
+        q: Select[Any],
+        sorts: list[str | SortModel] | list[SortModel] | list[str] | None = None,
+    ) -> Select[Any]:
+        sorts = sorts or []
+        sql_sorts = [self._construct_col_sort(s) for s in sorts]
+        return q.order_by(*sql_sorts)
+
     def _generate_query(
         self,
         page: int,
         page_size: int | None,
-        q_args: dict[str, QueryOperation | Any],
+        q_args: dict[str, QueryOperation | FilterModel | Any],
+        sorts: list[str | SortModel] | list[SortModel] | list[str] | None = None,
     ) -> tuple[Select[Any], int | None]:
         q = self._table.select()
+        q = self._apply_sorts(q, sorts)
         mod_pg_size = page_size
         if page_size:
             mod_pg_size = page_size + 1
             q = q.limit(mod_pg_size)
             q = q.offset((page - 1) * page_size)
-
         q = self._apply_query_args(q, q_args)
-
         return q, mod_pg_size
 
     @staticmethod
@@ -331,7 +373,8 @@ class MenthaTable(Generic[DomainModelT]):
         self,
         page: int = 1,
         page_size: int | None = None,
-        **query_args: QueryOperation | Any,
+        sorts: list[str | SortModel] | list[SortModel] | list[str] | None = None,
+        **query_args: QueryOperation | FilterModel | Any,
     ) -> PagedResultsModel[DomainModelT]:
         """
         Runs a query on the table using the passed kwargs. If you pass one of the
@@ -344,7 +387,7 @@ class MenthaTable(Generic[DomainModelT]):
             if any.
         """
         q, page_size = self._generate_query(
-            page=page, page_size=page_size, q_args=query_args
+            page=page, page_size=page_size, q_args=query_args, sorts=sorts
         )
         count_q = self._generate_count_query(query_args)
 
@@ -359,6 +402,7 @@ class MenthaTable(Generic[DomainModelT]):
         self,
         page: int = 1,
         page_size: int | None = None,
+        sorts: list[str | SortModel] | list[SortModel] | list[str] | None = None,
         **query_args: QueryOperation | Any,
     ) -> PagedResultsModel[DomainModelT]:
         """
@@ -372,7 +416,7 @@ class MenthaTable(Generic[DomainModelT]):
             if any.
         """
         q, page_size = self._generate_query(
-            page=page, page_size=page_size, q_args=query_args
+            page=page, page_size=page_size, q_args=query_args, sorts=sorts
         )
         count_q = self._generate_count_query(query_args)
 

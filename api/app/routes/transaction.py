@@ -1,19 +1,25 @@
 from uuid import UUID
 
-from fastapi import APIRouter
-from app.domain.category import SYSTEM_CATEGORIES, Category
-from app.domain.core import PagedResultsModel
+from fastapi import APIRouter, BackgroundTasks
+
+from app.domain.category import SYSTEM_CATEGORIES, UNCATEGORIZED, Category
+from app.domain.core import PagedResultsModel, QueryModel
+from app.domain.rule import check_rule_against_transaction
 from app.domain.transaction import (
     Transaction,
     TransactionInput,
     decode_transaction_input_model,
 )
-from app.routes.router import BasicRouter
+from app.routes.router import BasicRouter, ByOwnerMethods
+from app.routes.utils import preprocess_filters
 from app.storage.db import IsIn, MenthaDB
 from app.storage.importer import Importer
 
 
-class TransactionRouter(BasicRouter[Transaction[UUID], TransactionInput]):
+class TransactionRouter(
+    BasicRouter[Transaction[UUID], TransactionInput],
+    ByOwnerMethods[Transaction[Category]],
+):
     def __init__(self, mentha_db: MenthaDB) -> None:
         super().__init__(
             singular_name="transaction",
@@ -27,16 +33,19 @@ class TransactionRouter(BasicRouter[Transaction[UUID], TransactionInput]):
     def create_fastapi_router(self) -> APIRouter:
         router = super().create_fastapi_router()
 
-        router.add_api_route(
-            "/by-owner/{ownerId}",
-            self.get_by_owner,
-            summary="Get Transactions By Owner",
-        )
+        self.apply_methods_to_fastapi_router(router, self._plural)
+
         router.add_api_route(
             "/import/{ownerId}",
             self.import_transactions,
             summary="Import Transactions For Owner",
             methods=["POST"],
+        )
+        router.add_api_route(
+            "/apply-rules/{ownerId}",
+            self.apply_rules,
+            summary="Apply Rules to Owned Transactions",
+            methods=["PUT"],
         )
 
         return router
@@ -48,15 +57,23 @@ class TransactionRouter(BasicRouter[Transaction[UUID], TransactionInput]):
         return await super().update(id, input)
 
     async def get_all(
-        self, page: int = 1, pageSize: int = 50
+        self, query: QueryModel, page: int = 1, pageSize: int = 50
     ) -> PagedResultsModel[Transaction[UUID]]:
-        return await super().get_all(page, pageSize)
+        return await super().get_all(query, page, pageSize)
 
     async def get_by_owner(
-        self, ownerId: UUID, page: int = 1, pageSize: int = 50
+        self,
+        ownerId: UUID,
+        query: QueryModel,
+        page: int = 1,
+        pageSize: int = 50,
     ) -> PagedResultsModel[Transaction[Category]]:
         raw_results = await self._table.query_async(
-            page=page, page_size=pageSize, owner=ownerId
+            page=page,
+            page_size=pageSize,
+            sorts=query.sorts,
+            owner=ownerId,
+            **preprocess_filters(query.filters)
         )
         cat_result = await self._db.categories.query_async(
             id=IsIn([row.category for row in raw_results.results])
@@ -81,3 +98,37 @@ class TransactionRouter(BasicRouter[Transaction[UUID], TransactionInput]):
         importer = Importer(for_owner=ownerId, db=self._db)
         await importer.refresh_rules()
         await importer.execute()
+
+    async def apply_rules(
+        self,
+        ownerId: UUID,
+        background_tasks: BackgroundTasks,
+        uncategorizedOnly: bool = False,
+    ) -> None:
+        rules = await self._db.rules.query_async(owner=ownerId, page_size=500)
+        params = {"owner": ownerId}
+        if uncategorizedOnly:
+            params["category"] = UNCATEGORIZED.id
+
+        async def _execute() -> None:
+            pg = 1
+            while True:
+                to_update = list[Transaction[UUID]]()
+                transactions = await self._table.query_async(
+                    page=pg, page_size=100, sorts=[], **params
+                )
+                for trn in transactions.results:
+                    for rule in rules.results:
+                        new_cat = check_rule_against_transaction(rule, trn)
+                        if new_cat:
+                            trn.category = new_cat
+                            to_update.append(trn)
+                            break
+                for trn in to_update:
+                    await self._table.update_async(trn)
+                if not transactions.hasNext:
+                    break
+                else:
+                    pg += 1
+
+        background_tasks.add_task(_execute)
