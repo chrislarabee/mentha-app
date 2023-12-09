@@ -11,6 +11,14 @@ InputModelT = TypeVar("InputModelT", bound="InputModel")
 ModelT = TypeVar("ModelT", "DomainModel", "InputModel")
 
 
+class DataIntegrityError(Exception):
+    def __init__(self, msg: str, invalid_field: str, invalid_value: str) -> None:
+        self.invalid_field = invalid_field
+        self.invalid_value = invalid_value
+        msg = f"{msg.strip()} (invalid: {invalid_field} = {invalid_value})"
+        super().__init__(msg)
+
+
 class DomainModel(BaseModel):
     id: UUID
 

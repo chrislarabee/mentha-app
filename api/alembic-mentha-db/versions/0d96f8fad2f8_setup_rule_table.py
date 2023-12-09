@@ -28,6 +28,7 @@ def upgrade() -> None:
         sa.Column("result_category", sa.String(256)),
         sa.Column("owner", sa.String(256)),
         sa.Column("match_name", sa.String(256)),
+        sa.Column("match_amt", sa.String(256)),
     )
 
 

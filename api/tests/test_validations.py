@@ -4,79 +4,60 @@ raise runtime errors hidden from type checkers when jsons come in and out of
 the API.
 """
 
-from app.domain.account import Account
-from app.domain.category import Category
-from app.domain.institution import Institution
-from app.domain.rule import Rule
-from app.domain.transaction import Transaction
+from app.domain.account import AccountInput
+from app.domain.category import CategoryInput
+from app.domain.institution import InstitutionInput
+from app.domain.rule import RuleInput
+from app.domain.transaction import TransactionInput
 
 
 def test_transaction_validation():
     assert isinstance(
-        Transaction.model_validate(
+        TransactionInput.model_validate(
             {
                 "id": "a3427517-d9e6-49a0-8cf2-86e7fbdc7be4",
                 "fitId": "123",
                 "amt": 1.23,
-                "date": "2023-11-11T14:57:10.941509",
+                "date": "2023-11-11T00:00:00.00000",
                 "name": "foo",
                 "category": "6c47e0cc-b47c-4661-bda3-8e8077fed6c7",
                 "account": "6baa6b73-5bb5-4c0f-991d-1c76795380d9",
                 "owner": "d66d99a5-1f67-418a-bd86-ff293c632ec9",
             }
         ),
-        Transaction,
-    )
-    assert isinstance(
-        Transaction.model_validate(
-            {
-                "id": "a3427517-d9e6-49a0-8cf2-86e7fbdc7be4",
-                "fitId": "123",
-                "amt": 1.23,
-                "date": "2023-11-11T14:57:10.941509",
-                "name": "foo",
-                "category": {
-                    "id": "6c47e0cc-b47c-4661-bda3-8e8077fed6c7",
-                    "name": "foo",
-                    "owner": "d66d99a5-1f67-418a-bd86-ff293c632ec9",
-                },
-                "account": "6baa6b73-5bb5-4c0f-991d-1c76795380d9",
-                "owner": "d66d99a5-1f67-418a-bd86-ff293c632ec9",
-            }
-        ),
-        Transaction,
+        TransactionInput,
     )
 
 
 def test_category_validation():
     assert isinstance(
-        Category.model_validate(
+        CategoryInput.model_validate(
             {
                 "id": "6c47e0cc-b47c-4661-bda3-8e8077fed6c7",
                 "name": "foo",
                 "owner": "d66d99a5-1f67-418a-bd86-ff293c632ec9",
             }
         ),
-        Category,
+        CategoryInput,
     )
 
 
 def test_institution_validation():
     assert isinstance(
-        Institution.model_validate(
+        InstitutionInput.model_validate(
             {
                 "id": "3c4f97b0-a80d-46a4-b79c-9ee3eea67871",
                 "name": "foo",
                 "fitId": "1234567890",
             }
         ),
-        Institution,
+        InstitutionInput,
     )
 
 
 def test_account_validation():
     assert isinstance(
-        Account.model_validate(
+        AccountInput.model_validate(
             {
                 "id": "6baa6b73-5bb5-4c0f-991d-1c76795380d9",
                 "fitId": "1234567890",
@@ -86,20 +67,21 @@ def test_account_validation():
                 "owner": "d66d99a5-1f67-418a-bd86-ff293c632ec9",
             },
         ),
-        Account,
+        AccountInput,
     )
 
 
 def test_rule_validation():
     assert isinstance(
-        Rule.model_validate(
+        RuleInput.model_validate(
             {
                 "id": "7dd8dafb-f8ba-4a5e-a2ca-58bb495fdf9a",
                 "priority": 1,
                 "resultCategory": "6c47e0cc-b47c-4661-bda3-8e8077fed6c7",
                 "owner": "d66d99a5-1f67-418a-bd86-ff293c632ec9",
                 "matchName": "foo",
+                "matchAmt": None,
             }
         ),
-        Rule,
+        RuleInput,
     )

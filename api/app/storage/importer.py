@@ -1,16 +1,17 @@
 from pathlib import Path
-import re
-from typing import Iterable, Optional
+from typing import Iterable
 from uuid import UUID, uuid4
+
 from app.domain.account import Account, AccountType
 from app.domain.category import UNCATEGORIZED
-from app.domain.rule import Rule
+from app.domain.rule import Rule, check_rule_against_transaction
 from app.domain.transaction import Transaction
 from app.storage.db import MenthaDB
 from app.storage.ofx import OFXFileData, OFXTransaction, read_ofx_file
 
-
-IMPORT_FILES = "imports/"
+IMPORT_FILES = Path("imports/")
+INBOX = IMPORT_FILES.joinpath("inbox")
+COMPLETE = IMPORT_FILES.joinpath("complete")
 
 
 class TransactionImporterError(Exception):
@@ -27,6 +28,8 @@ class Importer:
         self._owner = for_owner
         self._db = db
         self._rules = list[Rule[UUID]]()
+        INBOX.mkdir(exist_ok=True)
+        COMPLETE.mkdir(exist_ok=True)
 
     async def refresh_rules(self) -> None:
         q_result = await self._db.rules.query_async(owner=self._owner)
@@ -34,7 +37,8 @@ class Importer:
         self._rules.sort(key=lambda rule: rule.priority)
 
     async def execute(self) -> None:
-        for filepath in Path(IMPORT_FILES).iterdir():
+        imported = list[Path]()
+        for filepath in INBOX.iterdir():
             ofx_file = read_ofx_file(filepath)
             inst_result = await self._db.institutions.query_async(
                 fit_id=ofx_file.bank_id
@@ -62,6 +66,9 @@ class Importer:
                 ofx_file.transactions, self._rules, acct.id, self._owner
             )
             await self._db.transactions.insert_async(*transactions)
+            imported.append(filepath)
+        for filepath in imported:
+            filepath.rename(COMPLETE.joinpath(filepath.name))
 
     @classmethod
     async def check_rules_against_ofx_transactions(
@@ -79,7 +86,7 @@ class Importer:
                 owner_id,
             )
             for rule in rules:
-                check = cls.check_rule_against_transaction(rule, tran)
+                check = check_rule_against_transaction(rule, tran)
                 if check:
                     tran.category = check
                     break
@@ -100,19 +107,6 @@ class Importer:
             account=acct_id,
             owner=owner_id,
         )
-
-    @staticmethod
-    def check_rule_against_transaction(
-        rule: Rule[UUID], trn_input: Transaction[UUID]
-    ) -> Optional[UUID]:
-        result: UUID | None = None
-        if rule.matchName:
-            match = re.search(
-                re.compile(rule.matchName, flags=re.IGNORECASE), trn_input.name
-            )
-            if match:
-                result = rule.resultCategory
-        return result
 
     @staticmethod
     def create_acct_from_ofx_file(
