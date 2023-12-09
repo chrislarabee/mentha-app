@@ -2,7 +2,11 @@ import { PagedResults } from "@/schemas/shared";
 import { axiosInstance } from "./endpoints";
 import * as yup from "yup";
 
-export type BaseEndpoint = "categories" | "institutions" | "accounts";
+export type BaseEndpoint =
+  | "categories"
+  | "institutions"
+  | "accounts"
+  | "transactions";
 
 export async function getRecord<T>(
   id: string,
@@ -22,9 +26,13 @@ export async function getRecord<T>(
 export async function getRecordsByOwner<T>(
   ownerId: string,
   base: BaseEndpoint,
-  schema: yup.Schema
+  schema: yup.Schema,
+  page: number = 1,
+  pageSize: number = 50
 ): Promise<PagedResults<T>> {
-  const resp = await axiosInstance.get(`/${base}/by-owner/${ownerId}`, {});
+  const resp = await axiosInstance.get(`/${base}/by-owner/${ownerId}`, {
+    params: { page, pageSize },
+  });
   const results = await schema.validate(resp.data);
   return results;
 }

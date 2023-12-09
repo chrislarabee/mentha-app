@@ -33,6 +33,11 @@ class CategoryRouter(BasicRouter[Category, CategoryInput]):
             self.get_by_owner,
             summary="Get Categories By Owner",
         )
+        router.add_api_route(
+            "/by-owner/{ownerId}/flat",
+            self.get_all_by_owner,
+            summary="Get Categories By Owner (Flattened)",
+        )
 
         return router
 
@@ -54,5 +59,14 @@ class CategoryRouter(BasicRouter[Category, CategoryInput]):
             # All owners are considered owners of the base system categories:
             results += SYSTEM_CATEGORIES
             return utils.assemble_primary_categories(results)
+
+        return raw_result.transform(_transform)
+
+    async def get_all_by_owner(self, ownerId: UUID) -> PagedResultsModel[Category]:
+        raw_result = await self._table.query_async(owner=ownerId)
+
+        def _transform(results: list[Category]) -> list[Category]:
+            results += SYSTEM_CATEGORIES
+            return results
 
         return raw_result.transform(_transform)

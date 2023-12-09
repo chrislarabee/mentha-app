@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 import re
 from typing import Iterable
@@ -13,7 +13,7 @@ class UnexpectedOFXFormat(Exception):
 @dataclass
 class OFXTransaction:
     fit_id: str
-    dt_posted: datetime
+    dt_posted: date
     trn_amt: float
     trn_type: str
     name: str
@@ -59,7 +59,7 @@ def read_ofx_transaction_row(trn: str) -> OFXTransaction:
     # ValueErrors:
     return OFXTransaction(
         fit_id=matches["FITID"],
-        dt_posted=datetime.strptime(matches["DTPOSTED"], "%Y%m%d%H%M%S"),
+        dt_posted=datetime.strptime(matches["DTPOSTED"], "%Y%m%d%H%M%S").date(),
         trn_amt=float(matches["TRNAMT"]),
         trn_type=matches["TRNTYPE"],
         name=matches["NAME"],

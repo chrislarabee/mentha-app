@@ -110,7 +110,7 @@ export default function Navigation({
     {
       icon: <AttachMoney />,
       label: "Transactions",
-      url: "/",
+      url: "/transactions",
     },
     {
       icon: <Assignment />,

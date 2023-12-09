@@ -13,6 +13,7 @@ export type PropsOfType<T, V> = keyof {
 export const pagedResultsSchema = yup.object({
   results: yup.array().of(yup.object({})).required(),
   hitCount: yup.number().required(),
+  totalHitCount: yup.number().required(),
   page: yup.number().required(),
   pageSize: yup.number().nullable(),
   hasNext: yup.boolean().required(),
@@ -22,6 +23,7 @@ export const pagedResultsSchema = yup.object({
 export type PagedResults<T> = {
   results: T[];
   hitCount: number;
+  totalHitCount: number;
   page: number;
   pageSize: number;
   hasNext: boolean;

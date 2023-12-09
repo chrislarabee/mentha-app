@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Generic, Optional, TypeVar
 from uuid import UUID
 from app.domain.category import UNCATEGORIZED, Category
@@ -13,7 +13,7 @@ CategoryT = TypeVar("CategoryT", UUID, Category)
 class Transaction(DomainModel, Generic[CategoryT]):
     fitId: str
     amt: float
-    date: datetime
+    date: date
     name: str
     category: CategoryT
     account: UUID
@@ -38,7 +38,7 @@ def decode_transaction_input_model(
         id=uuid,
         fitId=input.fitId,
         amt=input.amt,
-        date=input.date,
+        date=input.date.date(),
         name=input.name,
         category=input.category or UNCATEGORIZED.id,
         account=input.account,

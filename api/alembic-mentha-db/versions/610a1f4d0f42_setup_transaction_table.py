@@ -27,7 +27,7 @@ def upgrade() -> None:
         sa.Column("id", sa.String(256)),
         sa.Column("fit_id", sa.String(256)),
         sa.Column("amt", sa.Float()),
-        sa.Column("date", sa.DateTime),
+        sa.Column("date", sa.Date),
         sa.Column("name", sa.String(256)),
         sa.Column("category", sa.String(256)),
         sa.Column("account", sa.String(256)),

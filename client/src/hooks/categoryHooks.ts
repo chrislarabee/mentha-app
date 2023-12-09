@@ -12,7 +12,9 @@ import {
   PrimaryCategory,
   categorySchema,
   pagedCategoriesSchema,
+  pagedPrimaryCategoriesSchema,
 } from "@/schemas/category";
+import { axiosInstance } from "./endpoints";
 
 const baseEndpoint: BaseEndpoint = "categories";
 const queryKey = "category";
@@ -32,8 +34,24 @@ export function useCategoriesByOwner(ownerId: string) {
       await getRecordsByOwner<PrimaryCategory>(
         ownerId,
         baseEndpoint,
-        pagedCategoriesSchema
+        pagedPrimaryCategoriesSchema
       ),
+  });
+}
+
+async function getCategoriesByOwnerFlat(ownerId: string) {
+  const resp = await axiosInstance.get(
+    `/categories/by-owner/${ownerId}/flat`,
+    {}
+  );
+  const results = await pagedCategoriesSchema.validate(resp.data);
+  return results;
+}
+
+export function useCategoriesByOwnerFlat(ownerId: string) {
+  return useQuery({
+    queryKey: [queryKey, "by-owner", "flat"],
+    queryFn: async () => await getCategoriesByOwnerFlat(ownerId),
   });
 }
 

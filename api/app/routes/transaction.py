@@ -71,7 +71,7 @@ class TransactionRouter(BasicRouter[Transaction[UUID], TransactionInput]):
                 date=tran.date,
                 name=tran.name,
                 category=categories[tran.category],
-                account=tran.category,
+                account=tran.account,
                 owner=tran.owner,
             )
 
