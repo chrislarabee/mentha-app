@@ -46,7 +46,10 @@ export default function CategoriesPage() {
     owner: SYSTEM_USER,
   };
 
-  const { data: categories, isLoading } = useCategoriesByOwner(SYSTEM_USER);
+  const { data: categories, isLoading } = useCategoriesByOwner(SYSTEM_USER, {
+    sorts: [],
+    filters: [],
+  });
 
   const updateMutation = useUpdateCategory();
   const deleteMutation = useDeleteCategory();

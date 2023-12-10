@@ -9,22 +9,25 @@ import {
   TransactionInput,
   pagedTransactionsSchema,
 } from "@/schemas/transaction";
+import { MenthaQuery } from "@/schemas/shared";
 
 const baseEndpoint: BaseEndpoint = "transactions";
 const queryKey = "transaction";
 
 export function useTransactionsByOwner(
   ownerId: string,
+  query: MenthaQuery,
   page: number = 1,
   pageSize: number = 50
 ) {
   return useQuery({
-    queryKey: [queryKey, "by-owner", page],
+    queryKey: [queryKey, "by-owner", query, page],
     queryFn: async () =>
       await getRecordsByOwner<Transaction>(
         ownerId,
         baseEndpoint,
         pagedTransactionsSchema,
+        query,
         page,
         pageSize
       ),

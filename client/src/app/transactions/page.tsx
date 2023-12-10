@@ -11,7 +11,7 @@ import {
   useUpdateTransaction,
 } from "@/hooks/transactionHooks";
 import { Category, UNCATEGORIZED } from "@/schemas/category";
-import { SYSTEM_USER } from "@/schemas/shared";
+import { MenthaQuery, SYSTEM_USER } from "@/schemas/shared";
 import {
   Transaction,
   TransactionLabels,
@@ -32,6 +32,10 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 export default function TransactionsPage() {
+  const [query, setQuery] = useState<MenthaQuery>({
+    sorts: [{ field: "date", direction: "desc" }],
+    filters: [],
+  });
   const [catModalOpen, setCatModalOpen] = useState(false);
   const [newCat, setNewCat] = useState<string>(UNCATEGORIZED);
   const [paginationModel, setPaginationModel] = useState({
@@ -41,6 +45,7 @@ export default function TransactionsPage() {
 
   const { data: transactions, isLoading } = useTransactionsByOwner(
     SYSTEM_USER,
+    query,
     paginationModel.page + 1,
     paginationModel.pageSize
   );

@@ -13,6 +13,7 @@ import {
   basicAccountSchema,
   pagedAccountsSchema,
 } from "@/schemas/account";
+import { MenthaQuery } from "@/schemas/shared";
 
 const baseEndpoint: BaseEndpoint = "accounts";
 const queryKey = "account";
@@ -25,14 +26,15 @@ export function useAccount(id: string) {
   });
 }
 
-export function useAccountsByOwner(ownerId: string) {
+export function useAccountsByOwner(ownerId: string, query: MenthaQuery) {
   return useQuery({
     queryKey: [queryKey, "by-owner"],
     queryFn: async () =>
       await getRecordsByOwner<Account>(
         ownerId,
         baseEndpoint,
-        pagedAccountsSchema
+        pagedAccountsSchema,
+        query
       ),
   });
 }

@@ -15,6 +15,7 @@ import {
   pagedPrimaryCategoriesSchema,
 } from "@/schemas/category";
 import { axiosInstance } from "./endpoints";
+import { MenthaQuery } from "@/schemas/shared";
 
 const baseEndpoint: BaseEndpoint = "categories";
 const queryKey = "category";
@@ -27,14 +28,15 @@ export function useCategory(id: string) {
   });
 }
 
-export function useCategoriesByOwner(ownerId: string) {
+export function useCategoriesByOwner(ownerId: string, query: MenthaQuery) {
   return useQuery({
-    queryKey: [queryKey, "by-owner"],
+    queryKey: [queryKey, "by-owner", query],
     queryFn: async () =>
       await getRecordsByOwner<PrimaryCategory>(
         ownerId,
         baseEndpoint,
-        pagedPrimaryCategoriesSchema
+        pagedPrimaryCategoriesSchema,
+        query
       ),
   });
 }

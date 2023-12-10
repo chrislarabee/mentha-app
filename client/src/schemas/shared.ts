@@ -30,6 +30,30 @@ export type PagedResults<T> = {
   hasPrev: boolean;
 };
 
+export const SortDirections = ["asc", "desc"] as const;
+
+export type SortDirection = (typeof SortDirections)[number];
+
+export type QuerySortParam = {
+  field: string;
+  direction: SortDirection;
+};
+
+export const FilterOperators = ["=", ">", ">=", "<", "<=", "like"] as const;
+
+export type FilterOperator = (typeof SortDirections)[number];
+
+export type QueryFilterParam = {
+  field: string;
+  op: FilterOperator;
+  term: any;
+};
+
+export type MenthaQuery = {
+  sorts: QuerySortParam[];
+  filters: string[];
+};
+
 export function convertArrayToRecordOfArrays<
   T,
   U extends string | number | symbol

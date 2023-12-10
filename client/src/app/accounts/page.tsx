@@ -22,7 +22,10 @@ import {
 } from "@mui/material";
 
 export default function AccountsPage() {
-  const { data: accounts, isLoading } = useAccountsByOwner(SYSTEM_USER);
+  const { data: accounts, isLoading } = useAccountsByOwner(SYSTEM_USER, {
+    sorts: [],
+    filters: [],
+  });
 
   const accountIconMap: Record<AccountType, JSX.Element> = {
     Checking: <CreditCard />,

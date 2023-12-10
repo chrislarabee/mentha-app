@@ -1,5 +1,5 @@
 import { Labels } from "@/schemas/shared";
-import { ReactElement } from "react";
+import { ReactElement, useState } from "react";
 import {
   DataGrid,
   GridActionsCellItem,
@@ -7,7 +7,16 @@ import {
   GridValueFormatterParams,
   GridValueGetterParams,
 } from "@mui/x-data-grid";
-import { Tooltip } from "@mui/material";
+import {
+  Button,
+  IconButton,
+  List,
+  ListItem,
+  Popover,
+  Stack,
+  Tooltip,
+} from "@mui/material";
+import { FilterList } from "@mui/icons-material";
 
 export interface PaginationModel {
   page: number;
@@ -37,6 +46,7 @@ interface MenthaTableProps<T> {
     icon: ReactElement<any, string>;
     onClick: (id: string) => void;
   }[];
+  onFilter?: () => {};
 }
 
 export default function MenthaTable<T extends Record<string, any>>({
@@ -49,6 +59,10 @@ export default function MenthaTable<T extends Record<string, any>>({
   labels,
   actions,
 }: MenthaTableProps<T>) {
+  const [filterPopoverAnchor, setFilterPopoverAnchor] =
+    useState<HTMLButtonElement | null>(null);
+  const [newFilterCol, setNewFilterCol] = useState<ColumnDefinition<T>>();
+
   const columnDef: ColumnDefinition<T>[] = columns.map((value) => {
     if (value instanceof Object) {
       return value;
@@ -87,16 +101,60 @@ export default function MenthaTable<T extends Record<string, any>>({
     });
   }
 
+  const filterPopoverOpen = Boolean(filterPopoverAnchor);
+
+  const filterPopId = filterPopoverOpen ? "filter-popover" : undefined;
+
+  const filterButton = (
+    <IconButton
+      aria-describedby={filterPopId}
+      onClick={(event) => setFilterPopoverAnchor(event.currentTarget)}
+    >
+      <FilterList />
+    </IconButton>
+  );
+
+  const filterColumnOptions = (
+    <List>
+      {columnDef.map((def) => (
+        <ListItem key={def.field.toString()}>
+          <Button onClick={() => setNewFilterCol(def)}>
+            {labels[def.field]}
+          </Button>
+        </ListItem>
+      ))}
+    </List>
+  );
+
   return (
-    <DataGrid
-      loading={isLoading}
-      columns={gridColDef}
-      rows={rows}
-      rowCount={totalRows}
-      pageSizeOptions={[]}
-      paginationMode="server"
-      paginationModel={paginationModel}
-      onPaginationModelChange={setPaginationModel}
-    />
+    <Stack>
+      <Stack direction="row">
+        <Tooltip title="Add filter">{filterButton}</Tooltip>
+      </Stack>
+      <Popover
+        id={filterPopId}
+        open={filterPopoverOpen}
+        onClose={() => {
+          setFilterPopoverAnchor(null);
+          setNewFilterCol(undefined);
+        }}
+        anchorEl={filterPopoverAnchor}
+        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+      >
+        {newFilterCol ? "Filter Inputs Here" : filterColumnOptions}
+      </Popover>
+      <DataGrid
+        loading={isLoading}
+        columns={gridColDef}
+        rows={rows}
+        rowCount={totalRows}
+        pageSizeOptions={[]}
+        paginationMode="server"
+        paginationModel={paginationModel}
+        onPaginationModelChange={setPaginationModel}
+        disableColumnFilter
+        disableColumnSelector
+      />
+    </Stack>
   );
 }

@@ -1,4 +1,4 @@
-import { PagedResults } from "@/schemas/shared";
+import { MenthaQuery, PagedResults } from "@/schemas/shared";
 import { axiosInstance } from "./endpoints";
 import * as yup from "yup";
 
@@ -27,16 +27,13 @@ export async function getRecordsByOwner<T>(
   ownerId: string,
   base: BaseEndpoint,
   schema: yup.Schema,
+  query: MenthaQuery,
   page: number = 1,
   pageSize: number = 50
 ): Promise<PagedResults<T>> {
-  const resp = await axiosInstance.post(
-    `/${base}/by-owner/${ownerId}`,
-    {},
-    {
-      params: { page, pageSize },
-    }
-  );
+  const resp = await axiosInstance.post(`/${base}/by-owner/${ownerId}`, query, {
+    params: { page, pageSize },
+  });
   const results = await schema.validate(resp.data);
   return results;
 }
