@@ -1,5 +1,5 @@
 import { Labels } from "@/schemas/shared";
-import { ReactElement, useState } from "react";
+import { ReactElement, ReactNode, useState } from "react";
 import {
   DataGrid,
   GridActionsCellItem,
@@ -47,6 +47,7 @@ interface MenthaTableProps<T> {
     onClick: (id: string) => void;
   }[];
   onFilter?: () => {};
+  children?: ReactNode;
 }
 
 export default function MenthaTable<T extends Record<string, any>>({
@@ -58,6 +59,7 @@ export default function MenthaTable<T extends Record<string, any>>({
   columns,
   labels,
   actions,
+  children,
 }: MenthaTableProps<T>) {
   const [filterPopoverAnchor, setFilterPopoverAnchor] =
     useState<HTMLButtonElement | null>(null);
@@ -127,9 +129,12 @@ export default function MenthaTable<T extends Record<string, any>>({
   );
 
   return (
-    <Stack>
-      <Stack direction="row">
+    <Stack spacing={children ? 2 : 0}>
+      <Stack direction="row" justifyContent="space-between">
         <Tooltip title="Add filter">{filterButton}</Tooltip>
+        <Stack direction="row" justifyContent="flex-end">
+          {children}
+        </Stack>
       </Stack>
       <Popover
         id={filterPopId}
@@ -148,7 +153,7 @@ export default function MenthaTable<T extends Record<string, any>>({
         columns={gridColDef}
         rows={rows}
         rowCount={totalRows}
-        pageSizeOptions={[]}
+        pageSizeOptions={[50, 100]}
         paginationMode="server"
         paginationModel={paginationModel}
         onPaginationModelChange={setPaginationModel}

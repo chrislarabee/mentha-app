@@ -85,3 +85,14 @@ def test_rule_validation():
         ),
         RuleInput,
     )
+    assert isinstance(
+        RuleInput.model_validate(
+            {
+                "priority": 1,
+                "resultCategory": "6c47e0cc-b47c-4661-bda3-8e8077fed6c7",
+                "owner": "d66d99a5-1f67-418a-bd86-ff293c632ec9",
+                "matchName": "foo",
+            }
+        ),
+        RuleInput,
+    )

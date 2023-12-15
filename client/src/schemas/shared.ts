@@ -70,3 +70,9 @@ export function convertArrayToRecordOfArrays<
 
   return results;
 }
+
+export function removeNullsFromArray<T>(array: (T | null | undefined)[]): T[] {
+  return array.filter(
+    (element) => element !== null && element !== undefined
+  ) as T[];
+}

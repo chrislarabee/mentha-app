@@ -1,5 +1,5 @@
 import * as yup from "yup";
-import { Labels, pagedResultsSchema } from "./shared";
+import { Labels, SYSTEM_USER, pagedResultsSchema } from "./shared";
 
 export const UNCATEGORIZED = "6c47e0cc-b47c-4661-bda3-8e8077fed6c7";
 
@@ -53,4 +53,17 @@ export const CategoryInputLabels: Labels<CategoryInput> = {
   name: "Name",
   parentCategory: "Parent Category",
   owner: "Owner",
+};
+
+export const findCatById = (id: string, cats: Category[]) => {
+  let result: Category = {
+    id: UNCATEGORIZED,
+    name: "Uncategorized",
+    owner: SYSTEM_USER,
+  };
+  let findResult = cats.find((cat) => cat.id === id);
+  if (findResult) {
+    result = findResult;
+  }
+  return result;
 };

@@ -26,3 +26,10 @@ test("convertArrayToRecordOfArrays", () => {
     )
   ).toEqual(expected);
 });
+
+test("removeNullsFromArray", () => {
+  let expected = ["a", "b", "c"];
+  expect(
+    schemaUtils.removeNullsFromArray([null, "a", undefined, "b", null, "c"])
+  ).toEqual(expected);
+});

@@ -3,6 +3,7 @@ import {
   Card,
   CardContent,
   Container,
+  Divider,
   Modal,
   Stack,
   Typography,
@@ -41,6 +42,7 @@ export default function CenteredModal({
             <CardContent>
               <Stack spacing={1}>
                 {heading && <Typography>{heading}</Typography>}
+                <Divider />
                 {children}
               </Stack>
             </CardContent>

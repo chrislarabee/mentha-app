@@ -1,30 +1,31 @@
 "use client";
 
-import * as React from "react";
-import { styled, useTheme } from "@mui/material/styles";
-import Box from "@mui/material/Box";
-import Drawer from "@mui/material/Drawer";
-import MuiAppBar, { AppBarProps as MuiAppBarProps } from "@mui/material/AppBar";
-import Toolbar from "@mui/material/Toolbar";
-import List from "@mui/material/List";
-import Divider from "@mui/material/Divider";
-import IconButton from "@mui/material/IconButton";
-import MenuIcon from "@mui/icons-material/Menu";
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import ListItem from "@mui/material/ListItem";
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import ListItemText from "@mui/material/ListItemText";
 import {
   AccountBalance,
   AccountTreeRounded,
   Assignment,
   AttachMoney,
   InsertChart,
+  Sell,
   SpeedOutlined,
 } from "@mui/icons-material";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import MenuIcon from "@mui/icons-material/Menu";
+import { Accordion, AccordionDetails, AccordionSummary } from "@mui/material";
+import MuiAppBar, { AppBarProps as MuiAppBarProps } from "@mui/material/AppBar";
+import Box from "@mui/material/Box";
+import Divider from "@mui/material/Divider";
+import Drawer from "@mui/material/Drawer";
+import IconButton from "@mui/material/IconButton";
+import List from "@mui/material/List";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Toolbar from "@mui/material/Toolbar";
+import { styled, useTheme } from "@mui/material/styles";
 import { useRouter } from "next/navigation";
+import * as React from "react";
 
 const drawerWidth = 240;
 
@@ -81,6 +82,7 @@ interface NavItem {
   icon: JSX.Element;
   label: string;
   url: string;
+  subnavs?: NavItem[];
 }
 
 export default function Navigation({
@@ -89,6 +91,11 @@ export default function Navigation({
   children?: React.ReactNode;
 }) {
   const [open, setOpen] = React.useState(true);
+  const [openNavAccordions, setOpenNavAccordions] = React.useState<
+    Record<string, boolean>
+  >({
+    categories: false,
+  });
 
   const router = useRouter();
   const theme = useTheme();
@@ -118,9 +125,16 @@ export default function Navigation({
       url: "/",
     },
     {
-      icon: <AccountTreeRounded />,
+      icon: <Sell />,
       label: "Categories",
       url: "/categories",
+      subnavs: [
+        {
+          icon: <AccountTreeRounded />,
+          label: "Rules",
+          url: "/rules",
+        },
+      ],
     },
     {
       icon: <InsertChart />,
@@ -137,6 +151,40 @@ export default function Navigation({
   const navigate = (item: NavItem) => {
     router.push(item.url);
   };
+
+  const ListBlock = ({ items }: { items: NavItem[] }) => (
+    <List>
+      {items.map((item) => (
+        <Accordion
+          key={item.label}
+          disableGutters
+          elevation={0}
+          sx={{
+            // Gets rid of the borders between Accordions
+            "&:before": {
+              display: "none",
+            },
+            "&.Mui-expanded": {
+              maxHeight: 150,
+            },
+          }}
+        >
+          <AccordionSummary>
+            <ListItemButton onClick={() => navigate(item)}>
+              <ListItemIcon>{item.icon}</ListItemIcon>
+              <ListItemText primary={item.label} />
+            </ListItemButton>
+          </AccordionSummary>
+          {item.subnavs && (
+            <AccordionDetails sx={{}}>
+              <Divider />
+              <ListBlock items={item.subnavs} />
+            </AccordionDetails>
+          )}
+        </Accordion>
+      ))}
+    </List>
+  );
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -176,16 +224,7 @@ export default function Navigation({
           </IconButton>
         </DrawerHeader>
         <Divider />
-        <List>
-          {navItems.map((item) => (
-            <ListItem key={item.label} disablePadding>
-              <ListItemButton onClick={() => navigate(item)}>
-                <ListItemIcon>{item.icon}</ListItemIcon>
-                <ListItemText primary={item.label} />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
+        <ListBlock items={navItems} />
       </Drawer>
       <Main open={open}>
         <DrawerHeader />

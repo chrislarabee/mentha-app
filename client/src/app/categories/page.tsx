@@ -1,6 +1,7 @@
 "use client";
 
 import CenteredModal from "@/components/CenteredModal";
+import DeletePrompt from "@/components/DeletePrompt";
 import Form from "@/components/Form";
 import { SmallIconButton } from "@/components/buttons";
 import {
@@ -15,7 +16,7 @@ import {
 } from "@/schemas/category";
 import { SYSTEM_USER } from "@/schemas/shared";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { AltRoute, Delete, Edit, ExpandMore } from "@mui/icons-material";
+import { Delete, Edit, ExpandMore, MoveDown } from "@mui/icons-material";
 import {
   Accordion,
   AccordionDetails,
@@ -90,7 +91,7 @@ export default function CategoriesPage() {
           reset(data);
         }}
       >
-        <AltRoute />
+        <MoveDown />
       </SmallIconButton>
       <SmallIconButton
         tooltipText="Edit Category"
@@ -211,28 +212,6 @@ export default function CategoriesPage() {
     </Stack>
   );
 
-  const deletePrompt = (
-    <Stack spacing={1}>
-      <Typography variant="body2">
-        {`Really delete Category "${toDelete?.name}"?`}
-      </Typography>
-      <Typography variant="body2">This cannot be undone.</Typography>
-      <Stack direction="row" justifyContent="space-between">
-        <Button
-          onClick={() => {
-            setToDelete(undefined);
-            setDeletePromptOpen(false);
-          }}
-        >
-          Cancel
-        </Button>
-        <Button variant="contained" onClick={executeDelete}>
-          Delete
-        </Button>
-      </Stack>
-    </Stack>
-  );
-
   const spinner = isLoading && <CircularProgress />;
 
   return (
@@ -246,8 +225,9 @@ export default function CategoriesPage() {
           mutation={updateMutation}
           formConfig={formReturn}
           labels={CategoryInputLabels}
+          textFields={[{ field: "name", required: true }]}
           onSubmitSuccess={() => setNewCatOpen(false)}
-          stringFields={["name"]}
+          onCancel={() => setNewCatOpen(false)}
         />
       </CenteredModal>
       <CenteredModal
@@ -257,13 +237,14 @@ export default function CategoriesPage() {
       >
         {parentCategoryReassignment}
       </CenteredModal>
-      <CenteredModal
-        heading="Confirm Deletion"
-        open={deletePromptOpen}
-        onClose={() => setDeletePromptOpen(false)}
-      >
-        {deletePrompt}
-      </CenteredModal>
+      <DeletePrompt
+        promptOpen={deletePromptOpen}
+        setPromptOpen={setDeletePromptOpen}
+        toDelete={toDelete}
+        setToDelete={setToDelete}
+        getPromptMsg={(toDelete) => `Category "${toDelete?.name}"`}
+        executeDelete={executeDelete}
+      />
       <Stack>
         {spinner || categoryAccordions}
         <Button

@@ -2,9 +2,10 @@ import re
 import operator
 from typing import Generic, Optional, TypeVar
 from uuid import UUID
-from app.domain.category import Category
+from app.domain.category import INCOME, Category
 from app.domain.core import DataIntegrityError, DomainModel, InputModel
 from app.domain.transaction import Transaction
+from app.domain.user import SYSTEM_USER
 
 RULE_TABLE = "rules"
 
@@ -26,8 +27,8 @@ class RuleInput(InputModel):
     resultCategory: UUID
     # TODO: Remove this once it can be discerned by the API from the user:
     owner: UUID
-    matchName: Optional[str]
-    matchAmt: Optional[str]
+    matchName: Optional[str] = None
+    matchAmt: Optional[str] = None
 
 
 def decode_rule_input_model(uuid: UUID, input: RuleInput) -> Rule[UUID]:
@@ -84,3 +85,17 @@ def check_rule_against_transaction(
     if sum(match_dict.values()) == len(match_dict):
         result = rule.resultCategory
     return result
+
+
+INCOME_RULE = Rule(
+    id=UUID("1829b879-0de5-4e1b-8a9a-c6d899f0f69e"),
+    priority=1000,
+    resultCategory=INCOME.id,
+    matchName=None,
+    matchAmt=">0",
+    owner=SYSTEM_USER.id,
+)
+
+SYSTEM_RULES = [
+    INCOME_RULE,
+]

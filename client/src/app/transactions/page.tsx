@@ -1,32 +1,27 @@
 "use client";
 
+import CategoryAutocomplete from "@/components/CategoryAutocomplete";
 import CenteredModal from "@/components/CenteredModal";
 import MenthaTable from "@/components/MenthaTable";
-import {
-  useCategoriesByOwner,
-  useCategoriesByOwnerFlat,
-} from "@/hooks/categoryHooks";
+import { useCategoriesByOwnerFlat } from "@/hooks/categoryHooks";
 import {
   useTransactionsByOwner,
   useUpdateTransaction,
 } from "@/hooks/transactionHooks";
-import { Category, UNCATEGORIZED } from "@/schemas/category";
+import { Category, UNCATEGORIZED, findCatById } from "@/schemas/category";
 import { MenthaQuery, SYSTEM_USER } from "@/schemas/shared";
 import {
-  Transaction,
   TransactionLabels,
   transactionInputSchema,
 } from "@/schemas/transaction";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { AltRoute, Edit } from "@mui/icons-material";
 import {
-  Autocomplete,
   Button,
   CircularProgress,
   Container,
   Paper,
   Stack,
-  TextField,
 } from "@mui/material";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -61,26 +56,6 @@ export default function TransactionsPage() {
     setCatModalOpen(false);
     setNewCat(UNCATEGORIZED);
     reset();
-  };
-
-  const tfCatToOpt = (cat: Category) => ({
-    id: cat.id,
-    label: cat.name,
-  });
-
-  const findCatById = (id: string) => {
-    let result: Category = {
-      id: UNCATEGORIZED,
-      name: "Uncategorized",
-      owner: SYSTEM_USER,
-    };
-    if (categories) {
-      let findResult = categories.results.find((cat) => cat.id === id);
-      if (findResult) {
-        result = findResult;
-      }
-    }
-    return result;
   };
 
   const findTranById = (id: string) => {
@@ -157,16 +132,11 @@ export default function TransactionsPage() {
       <CenteredModal open={catModalOpen} onClose={resetCatSelect}>
         {categories && (
           <Stack spacing={1}>
-            <Autocomplete
-              aria-required
-              options={categories.results.map((cat) => tfCatToOpt(cat))}
-              value={tfCatToOpt(findCatById(newCat))}
-              renderInput={(params) => (
-                <Stack direction="row" justifyContent="right">
-                  <TextField {...params} label="Category" />
-                </Stack>
-              )}
-              onChange={(event, value) => (value ? setNewCat(value.id) : null)}
+            <CategoryAutocomplete
+              required
+              categories={categories.results}
+              value={findCatById(newCat, categories.results)}
+              onChange={(id) => id && setNewCat(id)}
             />
             <Stack direction="row" justifyContent="space-evenly">
               <Button fullWidth onClick={resetCatSelect}>
@@ -176,7 +146,6 @@ export default function TransactionsPage() {
                 variant="contained"
                 fullWidth
                 onClick={handleSubmit((data) => {
-                  console.log(data);
                   data.category = newCat;
                   updateMutation.mutate(data);
                   resetCatSelect();

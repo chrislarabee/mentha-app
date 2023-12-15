@@ -6,7 +6,8 @@ export type BaseEndpoint =
   | "categories"
   | "institutions"
   | "accounts"
-  | "transactions";
+  | "transactions"
+  | "rules";
 
 export async function getRecord<T>(
   id: string,
@@ -48,6 +49,7 @@ export async function updateRecord<T extends { id?: string | null }>(
   if (data.id) {
     method = axiosInstance.put;
   }
+  console.log(data);
   await method(`${url}${data.id || ""}`, data, {});
 }
 

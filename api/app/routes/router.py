@@ -60,7 +60,7 @@ class BasicRouter(Router, Generic[DomainModelT, InputModelT], ABC):
             methods=["DELETE"],
         )
         router.add_api_route(
-            "/",
+            "/query",
             self.get_all,
             summary=f"Get All {self._plural.title()}",
             methods=["POST"],
@@ -165,7 +165,7 @@ class ByOwnerMethods(Generic[DomainModelT], ABC):
         router.add_api_route(
             "/by-owner/{ownerId}",
             self.get_by_owner,
-            summary=f"Get {plural_name} By Owner",
+            summary=f"Get {plural_name.title()} By Owner",
             methods=["POST"],
         )
         return router
