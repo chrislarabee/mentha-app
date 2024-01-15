@@ -45,3 +45,20 @@ export function useUpdateTransaction() {
     },
   });
 }
+
+export function useOldestTransaction(ownerId: string) {
+  return useQuery({
+    queryKey: [queryKey, "by-owner", ownerId],
+    queryFn: async () => {
+      const results = await getRecordsByOwner<Transaction>(
+        ownerId,
+        baseEndpoint,
+        pagedTransactionsSchema,
+        { sorts: [{ field: "date", direction: "asc" }], filters: [] },
+        1,
+        1
+      );
+      return results.results[0];
+    },
+  });
+}

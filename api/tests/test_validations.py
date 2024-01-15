@@ -5,6 +5,7 @@ the API.
 """
 
 from app.domain.account import AccountInput
+from app.domain.budget import BudgetInput
 from app.domain.category import CategoryInput
 from app.domain.institution import InstitutionInput
 from app.domain.rule import RuleInput
@@ -95,4 +96,19 @@ def test_rule_validation():
             }
         ),
         RuleInput,
+    )
+
+
+def test_budget_validation():
+    assert isinstance(
+        BudgetInput.model_validate(
+            {
+                "category": "6c47e0cc-b47c-4661-bda3-8e8077fed6c7",
+                "amt": 50,
+                "period": 1,
+                "createDate": "2024-01-13T11:09:06.390290",
+                "owner": "d66d99a5-1f67-418a-bd86-ff293c632ec9",
+            }
+        ),
+        BudgetInput,
     )

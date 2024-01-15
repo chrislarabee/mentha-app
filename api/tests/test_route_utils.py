@@ -1,7 +1,8 @@
-from datetime import datetime
-from uuid import UUID
+from datetime import date, datetime
+from uuid import UUID, uuid4
 from app.domain.category import Category, PrimaryCategory, Subcategory
 from app.domain.core import FilterModel
+from app.domain.transaction import Transaction
 from app.domain.user import SYSTEM_USER
 from app.routes import utils
 
@@ -71,6 +72,33 @@ def test_assemble_primary_categories():
     ]
 
 
+def test_calculate_accumulated_budget():
+    assert utils.calculate_accumulated_budget(
+        100, 1, date(2023, 12, 1), date(2023, 12, 21)
+    ) == (100, 100)
+    assert utils.calculate_accumulated_budget(
+        750, 3, date(2023, 12, 1), date(2023, 12, 21)
+    ) == (250, 250)
+    assert utils.calculate_accumulated_budget(
+        750, 3, date(2023, 11, 1), date(2023, 12, 1)
+    ) == (250, 500)
+    assert utils.calculate_accumulated_budget(
+        750, 3, date(2023, 1, 1), date(2023, 12, 1)
+    ) == (750, 750)
+    assert utils.calculate_accumulated_budget(
+        750, 3, date(2023, 2, 1), date(2023, 12, 1)
+    ) == (250, 500)
+    assert utils.calculate_accumulated_budget(
+        750, 3, date(2022, 3, 1), date(2023, 12, 1)
+    ) == (250, 250)
+    assert utils.calculate_accumulated_budget(
+        600, 6, date(2023, 1, 13), date(2023, 12, 1)
+    ) == (100, 500)
+    assert utils.calculate_accumulated_budget(
+        120, 3, date(2024, 1, 1), date(2024, 1, 1)
+    ) == (40, 40)
+
+
 def test_preprocess_filters():
     raw = [
         FilterModel(field="foo", op="=", term="prueba"),
@@ -86,3 +114,33 @@ def test_preprocess_filters():
         "eggs": FilterModel(field="eggs", op="<", term=datetime(2023, 12, 9).date()),
         "eggz": FilterModel(field="eggz", op=">", term=datetime(2023, 12, 1).date()),
     }
+
+
+def test_summarize_transactions_by_category():
+    def _gen_test_tran(amt: float, cat: UUID) -> Transaction[UUID]:
+        return Transaction(
+            id=uuid4(),
+            fitId="test",
+            amt=amt,
+            date=datetime.now().date(),
+            category=cat,
+            name="foo",
+            account=uuid4(),
+            owner=uuid4(),
+        )
+
+    cat_a = uuid4()
+    cat_b = uuid4()
+    cat_c = uuid4()
+
+    assert utils.summarize_transactions_by_category(
+        [
+            _gen_test_tran(-123.06, cat_a),
+            _gen_test_tran(1002.00, cat_b),
+            _gen_test_tran(550, cat_b),
+            _gen_test_tran(-456.99, cat_a),
+            _gen_test_tran(-67.54, cat_c),
+            _gen_test_tran(-789.12, cat_a),
+            _gen_test_tran(-31.08, cat_c),
+        ]
+    ) == {cat_a: -1369.17, cat_b: 1552.00, cat_c: -98.62}

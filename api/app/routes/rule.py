@@ -2,12 +2,12 @@ from uuid import UUID
 
 from fastapi import APIRouter
 
-from app.domain.category import SYSTEM_CATEGORIES, Category
+from app.domain.category import Category
 from app.domain.core import PagedResultsModel, QueryModel
 from app.domain.rule import Rule, RuleInput, decode_rule_input_model
 from app.routes.router import BasicRouter, ByOwnerMethods
-from app.routes.utils import preprocess_filters
-from app.storage.db import IsIn, MenthaTable
+from app.routes.utils import preprocess_filters, get_categories_by_id
+from app.storage.db import MenthaTable
 
 
 class RuleRouter(BasicRouter[Rule[UUID], RuleInput], ByOwnerMethods[Rule[Category]]):
@@ -51,10 +51,9 @@ class RuleRouter(BasicRouter[Rule[UUID], RuleInput], ByOwnerMethods[Rule[Categor
             owner=ownerId,
             **preprocess_filters(query.filters)
         )
-        cat_result = await self._cat_table.query_async(
-            id=IsIn([row.resultCategory for row in raw_results.results])
+        categories = await get_categories_by_id(
+            self._cat_table, [row.resultCategory for row in raw_results.results]
         )
-        categories = {cat.id: cat for cat in [*cat_result.results, *SYSTEM_CATEGORIES]}
 
         def _transform(rule: Rule[UUID]) -> Rule[Category]:
             return Rule(

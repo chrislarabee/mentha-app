@@ -2,7 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks
 
-from app.domain.category import SYSTEM_CATEGORIES, UNCATEGORIZED, Category
+from app.domain.category import UNCATEGORIZED, Category
 from app.domain.core import PagedResultsModel, QueryModel
 from app.domain.rule import check_rule_against_transaction
 from app.domain.transaction import (
@@ -11,8 +11,8 @@ from app.domain.transaction import (
     decode_transaction_input_model,
 )
 from app.routes.router import BasicRouter, ByOwnerMethods
-from app.routes.utils import preprocess_filters
-from app.storage.db import IsIn, MenthaDB
+from app.routes.utils import get_categories_by_id, preprocess_filters
+from app.storage.db import MenthaDB
 from app.storage.importer import Importer
 
 
@@ -75,24 +75,13 @@ class TransactionRouter(
             owner=ownerId,
             **preprocess_filters(query.filters)
         )
-        cat_result = await self._db.categories.query_async(
-            id=IsIn([row.category for row in raw_results.results])
+        categories = await get_categories_by_id(
+            self._db.categories, [row.category for row in raw_results.results]
         )
-        categories = {cat.id: cat for cat in [*cat_result.results, *SYSTEM_CATEGORIES]}
 
-        def _transform(tran: Transaction[UUID]) -> Transaction[Category]:
-            return Transaction(
-                id=tran.id,
-                fitId=tran.fitId,
-                amt=tran.amt,
-                date=tran.date,
-                name=tran.name,
-                category=categories[tran.category],
-                account=tran.account,
-                owner=tran.owner,
-            )
-
-        return raw_results.broadcast_transform(_transform)
+        return raw_results.broadcast_transform(
+            lambda tran: self._transform(tran, categories)
+        )
 
     async def import_transactions(self, ownerId: UUID) -> None:
         importer = Importer(for_owner=ownerId, db=self._db)
@@ -132,3 +121,18 @@ class TransactionRouter(
                     pg += 1
 
         background_tasks.add_task(_execute)
+
+    @staticmethod
+    def _transform(
+        tran: Transaction[UUID], categories: dict[UUID, Category]
+    ) -> Transaction[Category]:
+        return Transaction(
+            id=tran.id,
+            fitId=tran.fitId,
+            amt=tran.amt,
+            date=tran.date,
+            name=tran.name,
+            category=categories[tran.category],
+            account=tran.account,
+            owner=tran.owner,
+        )

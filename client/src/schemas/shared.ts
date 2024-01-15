@@ -76,3 +76,29 @@ export function removeNullsFromArray<T>(array: (T | null | undefined)[]): T[] {
     (element) => element !== null && element !== undefined
   ) as T[];
 }
+
+export const currencyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+});
+
+export function generateMonthArray(
+  baseDate: Date,
+  numMonths: number,
+  sortDirection: "asc" | "desc" = "asc"
+) {
+  let startDate = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
+  let result: Date[] = Array(new Date(startDate));
+  if (numMonths < 0) {
+    startDate.setMonth(startDate.getMonth() + numMonths);
+  }
+  for (let i = 1; i < Math.abs(numMonths); i++) {
+    result.push(new Date(startDate.setMonth(startDate.getMonth() + 1)));
+  }
+  if (sortDirection === "asc") {
+    result.sort((a, b) => a.getTime() - b.getTime());
+  } else {
+    result.sort((a, b) => b.getTime() - a.getTime());
+  }
+  return result;
+}

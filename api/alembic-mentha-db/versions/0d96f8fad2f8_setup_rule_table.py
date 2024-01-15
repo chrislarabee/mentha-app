@@ -1,4 +1,5 @@
-"""setup_rule_table
+"""
+Initial rule table setup.
 
 Revision ID: 0d96f8fad2f8
 Revises: a18c8679d98e

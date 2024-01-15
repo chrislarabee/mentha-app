@@ -3,11 +3,12 @@ import { axiosInstance } from "./endpoints";
 import * as yup from "yup";
 
 export type BaseEndpoint =
+  | "accounts"
+  | "budgets"
   | "categories"
   | "institutions"
-  | "accounts"
-  | "transactions"
-  | "rules";
+  | "rules"
+  | "transactions";
 
 export async function getRecord<T>(
   id: string,
@@ -49,7 +50,6 @@ export async function updateRecord<T extends { id?: string | null }>(
   if (data.id) {
     method = axiosInstance.put;
   }
-  console.log(data);
   await method(`${url}${data.id || ""}`, data, {});
 }
 

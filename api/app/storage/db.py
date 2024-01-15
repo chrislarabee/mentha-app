@@ -17,13 +17,9 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.domain.account import ACCOUNT_TABLE, Account
+from app.domain.budget import BUDGET_TABLE, Budget
 from app.domain.category import CATEGORY_TABLE, Category
-from app.domain.core import (
-    DomainModelT,
-    FilterModel,
-    PagedResultsModel,
-    SortModel,
-)
+from app.domain.core import DomainModelT, FilterModel, PagedResultsModel, SortModel
 from app.domain.institution import INSTITUTION_TABLE, Institution
 from app.domain.rule import RULE_TABLE, Rule
 from app.domain.transaction import TRANSACTION_TABLE, Transaction
@@ -70,7 +66,14 @@ class MenthaDB:
                     raise e
                 logging.info("Waiting for DB connection...")
                 sleep(1)
-
+        self._accounts = self._setup_table(
+            domain_model=Account[UUID],
+            table=ACCOUNT_TABLE,
+        )
+        self._budgets = self._setup_table(
+            domain_model=Budget[UUID],
+            table=BUDGET_TABLE,
+        )
         self._categories = self._setup_table(
             domain_model=Category,
             table=CATEGORY_TABLE,
@@ -78,10 +81,6 @@ class MenthaDB:
         self._institutions = self._setup_table(
             domain_model=Institution,
             table=INSTITUTION_TABLE,
-        )
-        self._accounts = self._setup_table(
-            domain_model=Account[UUID],
-            table=ACCOUNT_TABLE,
         )
         self._rules = self._setup_table(
             domain_model=Rule[UUID],
@@ -116,16 +115,20 @@ class MenthaDB:
         return f"postgresql+{driver}://{user}:{pwd}@{host}/{MENTHA_DBNAME}"
 
     @property
+    def accounts(self) -> MenthaTable[Account[UUID]]:
+        return self._accounts
+
+    @property
+    def budgets(self) -> MenthaTable[Budget[UUID]]:
+        return self._budgets
+
+    @property
     def categories(self) -> MenthaTable[Category]:
         return self._categories
 
     @property
     def institutions(self) -> MenthaTable[Institution]:
         return self._institutions
-
-    @property
-    def accounts(self) -> MenthaTable[Account[UUID]]:
-        return self._accounts
 
     @property
     def rules(self) -> MenthaTable[Rule[UUID]]:

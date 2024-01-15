@@ -122,7 +122,7 @@ export default function Navigation({
     {
       icon: <Assignment />,
       label: "Budget",
-      url: "/",
+      url: "/budgets",
     },
     {
       icon: <Sell />,

@@ -1,6 +1,13 @@
 import { Labels } from "@/schemas/shared";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { Box, Button, Stack, TextField } from "@mui/material";
+import {
+  Box,
+  Button,
+  InputAdornment,
+  InputProps,
+  Stack,
+  TextField,
+} from "@mui/material";
 import { UseMutationResult } from "@tanstack/react-query";
 import { ReactNode } from "react";
 import {
@@ -15,16 +22,22 @@ import {
 import { v4 as uuid4 } from "uuid";
 import * as yup from "yup";
 
+type TextFieldType = "text" | "number" | "date";
+
+type InputAdornment = { pos: "start" | "end"; adornment: string };
+
 export interface TextFieldDefinition<T> {
   field: keyof T;
-  type?: "text" | "number" | "date";
+  type?: TextFieldType;
   required?: boolean;
+  inputAdornment?: InputAdornment;
 }
 
 interface FormTextFieldProps<T extends FieldValues>
   extends UseControllerProps<T> {
   label: string;
-  type?: "text" | "number" | "date";
+  type?: TextFieldType;
+  inputAdornment?: InputAdornment;
   required?: boolean;
   errors?: FieldErrors<T>;
 }
@@ -34,9 +47,27 @@ function FormTextField<T extends FieldValues>({
   name,
   label,
   type,
+  inputAdornment,
   errors,
   required,
 }: FormTextFieldProps<T>) {
+  let inputProps: InputProps = {};
+  if (inputAdornment) {
+    const inputAdornElement = (
+      <InputAdornment position={inputAdornment.pos}>
+        {inputAdornment.adornment}
+      </InputAdornment>
+    );
+    if (inputAdornment.pos === "start") {
+      inputProps = {
+        startAdornment: inputAdornElement,
+      };
+    } else {
+      inputProps = {
+        endAdornment: inputAdornElement,
+      };
+    }
+  }
   return (
     <Controller
       name={name}
@@ -48,10 +79,16 @@ function FormTextField<T extends FieldValues>({
           size="small"
           label={label}
           type={type}
-          value={field.value || ""}
+          value={
+            type === "date"
+              ? new Date(field.value).toISOString().split("T")[0]
+              : field.value || ""
+          }
+          onChange={field.onChange}
           required={required}
           error={errors && errors[name] !== undefined}
           helperText={errors ? errors[name]?.message?.toString() : null}
+          InputProps={inputProps}
         />
       )}
     />
@@ -117,7 +154,7 @@ export default function Form<T extends FieldValues>({
 
   return (
     <Box component="form">
-      <Stack spacing={1}>
+      <Stack spacing={2}>
         {textFieldDef.map((textF) => (
           <FormTextField
             key={uuid4()}
@@ -125,6 +162,7 @@ export default function Form<T extends FieldValues>({
             name={textF.field.toString()}
             label={labels[textF.field]}
             type={textF.type}
+            inputAdornment={textF.inputAdornment}
             errors={errors}
             required={textF.required}
           />

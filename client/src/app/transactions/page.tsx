@@ -9,7 +9,7 @@ import {
   useUpdateTransaction,
 } from "@/hooks/transactionHooks";
 import { Category, UNCATEGORIZED, findCatById } from "@/schemas/category";
-import { MenthaQuery, SYSTEM_USER } from "@/schemas/shared";
+import { MenthaQuery, SYSTEM_USER, currencyFormatter } from "@/schemas/shared";
 import {
   TransactionLabels,
   transactionInputSchema,
@@ -63,11 +63,6 @@ export default function TransactionsPage() {
       return transactions.results.find((tran) => tran.id === id);
     }
   };
-
-  const currencyFormatter = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  });
 
   const transactionTable = transactions && categories && (
     <MenthaTable

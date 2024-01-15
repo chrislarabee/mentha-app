@@ -1,6 +1,7 @@
 import * as yup from "yup";
 import { Labels, SYSTEM_USER, pagedResultsSchema } from "./shared";
 
+export const INCOME = "a3720dcc-0ba4-426d-9c41-620a0fbe0ad6";
 export const UNCATEGORIZED = "6c47e0cc-b47c-4661-bda3-8e8077fed6c7";
 
 export const categorySchema = yup.object({

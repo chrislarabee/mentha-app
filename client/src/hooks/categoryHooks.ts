@@ -41,16 +41,15 @@ export function useCategoriesByOwner(ownerId: string, query: MenthaQuery) {
   });
 }
 
-async function getCategoriesByOwnerFlat(ownerId: string) {
-  const resp = await axiosInstance.get(
-    `/categories/by-owner/${ownerId}/flat`,
-    {}
-  );
-  const results = await pagedCategoriesSchema.validate(resp.data);
-  return results;
-}
-
 export function useCategoriesByOwnerFlat(ownerId: string) {
+  const getCategoriesByOwnerFlat = async (ownerId: string) => {
+    const resp = await axiosInstance.get(
+      `/categories/by-owner/${ownerId}/flat`,
+      {}
+    );
+    const results = await pagedCategoriesSchema.validate(resp.data);
+    return results;
+  };
   return useQuery({
     queryKey: [queryKey, "by-owner", "flat"],
     queryFn: async () => await getCategoriesByOwnerFlat(ownerId),
