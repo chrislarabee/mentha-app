@@ -209,7 +209,9 @@ export default function BudgetsPage() {
   const otherBudgets =
     budgets &&
     budgets.filter(
-      (bgt) => ![INCOME, UNALLOCATED_CATEGORY].includes(bgt.category.id)
+      (bgt) =>
+        ![INCOME, UNALLOCATED_CATEGORY].includes(bgt.category.id) &&
+        bgt.category.parentCategory !== INCOME
     );
 
   const unallocatedBudgetCard =

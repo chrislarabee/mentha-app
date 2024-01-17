@@ -4,12 +4,11 @@ import {
   InputLabel,
   MenuItem,
   Select,
-  SelectChangeEvent,
   Stack,
 } from "@mui/material";
 
 interface MenthaSelectProps<T> {
-  options: T[];
+  options: T[] | ReadonlyArray<T>;
   optConverter: (opt: T) => string;
   label: string;
   value?: T;
