@@ -12,6 +12,7 @@ import {
   useRulesByOwner,
   useUpdateRule,
 } from "@/hooks/ruleHooks";
+import { useApplyRules } from "@/hooks/transactionHooks";
 import { Category, UNCATEGORIZED, findCatById } from "@/schemas/category";
 import {
   Rule,
@@ -27,7 +28,7 @@ import {
 } from "@/schemas/shared";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { Add, Delete, Edit } from "@mui/icons-material";
-import { Box, Button, Container, Paper, Stack } from "@mui/material";
+import { Box, Button, Container, Paper, Snackbar, Stack } from "@mui/material";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -37,6 +38,7 @@ export default function RulesPage() {
   const [deletePromptOpen, setDeletePromptOpen] = useState(false);
   const [toDelete, setToDelete] = useState<Rule>();
   const [modalHeading, setModalHeading] = useState("Add New Rule");
+  const [toastOpen, setToastOpen] = useState(false);
   const [query, setQuery] = useState<MenthaQuery>({
     sorts: [{ field: "priority", direction: "asc" }],
     filters: [],
@@ -48,6 +50,7 @@ export default function RulesPage() {
 
   const updateMutation = useUpdateRule();
   const deleteMutation = useDeleteRule();
+  const applyRulesMutation = useApplyRules(() => setToastOpen(true));
 
   const defaultInput: RuleInput = {
     priority: 1,
@@ -91,6 +94,7 @@ export default function RulesPage() {
       labels={RuleLabels}
       rows={rules.results}
       totalRows={rules.totalHitCount}
+      justifyChildren="flex-end"
       columns={[
         {
           field: "resultCategory",
@@ -117,6 +121,7 @@ export default function RulesPage() {
                 matchName: rule.matchName,
               });
               setResultCat(rule.resultCategory.id);
+              setModalHeading("Edit Rule");
               setFormModalOpen(true);
             }
           },
@@ -134,7 +139,13 @@ export default function RulesPage() {
         },
       ]}
     >
-      <Button variant="contained">Apply Rules</Button>
+      <Button
+        variant="contained"
+        onClick={() => applyRulesMutation.mutate(SYSTEM_USER)}
+        disabled={applyRulesMutation.isPending}
+      >
+        Apply Rules
+      </Button>
     </MenthaTable>
   );
 
@@ -147,7 +158,7 @@ export default function RulesPage() {
   return (
     <Box>
       <CenteredModal
-        heading="Add Rule"
+        heading={modalHeading}
         open={formModalOpen}
         onClose={() => setFormModalOpen(false)}
       >
@@ -195,13 +206,22 @@ export default function RulesPage() {
         }}
         executeDelete={executeDelete}
       />
+      <Snackbar
+        message="Rules successfully applied!"
+        open={toastOpen}
+        onClose={() => setToastOpen(false)}
+        autoHideDuration={3000}
+      />
       <Container component={Paper} sx={{ padding: "20px 0px" }}>
         {ruleTable}
       </Container>
       {categories && (
         <FloatingAction
           variant="primary"
-          onClick={() => setFormModalOpen(true)}
+          onClick={() => {
+            setFormModalOpen(true);
+            setModalHeading("Add Rule");
+          }}
         >
           <Add />
         </FloatingAction>

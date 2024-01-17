@@ -1,5 +1,6 @@
 "use client";
 
+import FilterManager from "@/components/FilterManager";
 import CategoryAutocomplete from "@/components/CategoryAutocomplete";
 import CenteredModal from "@/components/CenteredModal";
 import MenthaTable from "@/components/MenthaTable";
@@ -9,7 +10,12 @@ import {
   useUpdateTransaction,
 } from "@/hooks/transactionHooks";
 import { Category, UNCATEGORIZED, findCatById } from "@/schemas/category";
-import { MenthaQuery, SYSTEM_USER, currencyFormatter } from "@/schemas/shared";
+import {
+  MenthaQuery,
+  QueryFilterParam,
+  SYSTEM_USER,
+  currencyFormatter,
+} from "@/schemas/shared";
 import {
   TransactionLabels,
   transactionInputSchema,
@@ -25,8 +31,10 @@ import {
 } from "@mui/material";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import MenthaSelect from "@/components/MenthaSelect";
 
 export default function TransactionsPage() {
+  const [filters, setFilters] = useState<Record<string, QueryFilterParam>>({});
   const [query, setQuery] = useState<MenthaQuery>({
     sorts: [{ field: "date", direction: "desc" }],
     filters: [],
@@ -114,7 +122,33 @@ export default function TransactionsPage() {
           onClick: (transactionId: string) => {},
         },
       ]}
-    />
+    >
+      <FilterManager
+        columnOptions={[
+          "name",
+          { field: "amt", type: "number" },
+          { field: "date", type: "date" },
+          {
+            field: "category",
+            type: "category",
+            renderFilterTerm: (term) => {
+              const result = categories.results.find((cat) => cat.id === term);
+              return result?.name || term;
+            },
+          },
+        ]}
+        categories={categories.results}
+        optionLabels={TransactionLabels}
+        filters={filters}
+        setFilters={(filters) => {
+          setFilters(filters);
+          setQuery((prev) => ({
+            sorts: prev.sorts,
+            filters: Object.values(filters),
+          }));
+        }}
+      />
+    </MenthaTable>
   );
 
   const spinner = isLoading && (
@@ -122,6 +156,7 @@ export default function TransactionsPage() {
       <CircularProgress />
     </Stack>
   );
+
   return (
     <Container component={Paper} sx={{ padding: "20px 0px" }}>
       <CenteredModal open={catModalOpen} onClose={resetCatSelect}>

@@ -7,16 +7,7 @@ import {
   GridValueFormatterParams,
   GridValueGetterParams,
 } from "@mui/x-data-grid";
-import {
-  Button,
-  IconButton,
-  List,
-  ListItem,
-  Popover,
-  Stack,
-  Tooltip,
-} from "@mui/material";
-import { FilterList } from "@mui/icons-material";
+import { Stack, Tooltip } from "@mui/material";
 
 export interface PaginationModel {
   page: number;
@@ -48,6 +39,12 @@ interface MenthaTableProps<T> {
   }[];
   onFilter?: () => {};
   children?: ReactNode;
+  justifyChildren?:
+    | "flex-start"
+    | "flex-end"
+    | "center"
+    | "space-between"
+    | "space-evenly";
 }
 
 export default function MenthaTable<T extends Record<string, any>>({
@@ -60,11 +57,8 @@ export default function MenthaTable<T extends Record<string, any>>({
   labels,
   actions,
   children,
+  justifyChildren,
 }: MenthaTableProps<T>) {
-  const [filterPopoverAnchor, setFilterPopoverAnchor] =
-    useState<HTMLButtonElement | null>(null);
-  const [newFilterCol, setNewFilterCol] = useState<ColumnDefinition<T>>();
-
   const columnDef: ColumnDefinition<T>[] = columns.map((value) => {
     if (value instanceof Object) {
       return value;
@@ -103,51 +97,11 @@ export default function MenthaTable<T extends Record<string, any>>({
     });
   }
 
-  const filterPopoverOpen = Boolean(filterPopoverAnchor);
-
-  const filterPopId = filterPopoverOpen ? "filter-popover" : undefined;
-
-  const filterButton = (
-    <IconButton
-      aria-describedby={filterPopId}
-      onClick={(event) => setFilterPopoverAnchor(event.currentTarget)}
-    >
-      <FilterList />
-    </IconButton>
-  );
-
-  const filterColumnOptions = (
-    <List>
-      {columnDef.map((def) => (
-        <ListItem key={def.field.toString()}>
-          <Button onClick={() => setNewFilterCol(def)}>
-            {labels[def.field]}
-          </Button>
-        </ListItem>
-      ))}
-    </List>
-  );
-
   return (
     <Stack spacing={children ? 2 : 0}>
-      <Stack direction="row" justifyContent="space-between">
-        <Tooltip title="Add filter">{filterButton}</Tooltip>
-        <Stack direction="row" justifyContent="flex-end">
-          {children}
-        </Stack>
+      <Stack direction="row" justifyContent={justifyChildren}>
+        {children}
       </Stack>
-      <Popover
-        id={filterPopId}
-        open={filterPopoverOpen}
-        onClose={() => {
-          setFilterPopoverAnchor(null);
-          setNewFilterCol(undefined);
-        }}
-        anchorEl={filterPopoverAnchor}
-        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-      >
-        {newFilterCol ? "Filter Inputs Here" : filterColumnOptions}
-      </Popover>
       <DataGrid
         loading={isLoading}
         columns={gridColDef}

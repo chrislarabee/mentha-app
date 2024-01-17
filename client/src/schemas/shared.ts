@@ -41,7 +41,7 @@ export type QuerySortParam = {
 
 export const FilterOperators = ["=", ">", ">=", "<", "<=", "like"] as const;
 
-export type FilterOperator = (typeof SortDirections)[number];
+export type FilterOperator = (typeof FilterOperators)[number];
 
 export type QueryFilterParam = {
   field: string;
@@ -51,7 +51,7 @@ export type QueryFilterParam = {
 
 export type MenthaQuery = {
   sorts: QuerySortParam[];
-  filters: string[];
+  filters: QueryFilterParam[];
 };
 
 export function convertArrayToRecordOfArrays<

@@ -10,6 +10,7 @@ import {
   pagedTransactionsSchema,
 } from "@/schemas/transaction";
 import { MenthaQuery } from "@/schemas/shared";
+import { axiosInstance } from "./endpoints";
 
 const baseEndpoint: BaseEndpoint = "transactions";
 const queryKey = "transaction";
@@ -59,6 +60,25 @@ export function useOldestTransaction(ownerId: string) {
         1
       );
       return results.results[0];
+    },
+  });
+}
+
+export function useApplyRules(onSuccess?: () => void) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (ownerId: string, uncategorizedOnly: boolean = true) => {
+      await axiosInstance.put(
+        `${baseEndpoint}/apply-rules/${ownerId}`,
+        {},
+        { params: { uncategorizedOnly } }
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [queryKey] });
+      if (onSuccess) {
+        onSuccess();
+      }
     },
   });
 }
