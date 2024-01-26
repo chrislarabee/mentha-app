@@ -62,12 +62,10 @@ export function convertArrayToRecordOfArrays<
     (prev, curr) => ({ ...prev, [keyExtractor(curr)]: [] }),
     {} as Record<U, T[]>
   );
-
   array.map((obj) => {
     let key = keyExtractor(obj);
     results[key].push(obj);
   });
-
   return results;
 }
 

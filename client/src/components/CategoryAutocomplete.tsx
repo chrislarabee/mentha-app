@@ -10,7 +10,7 @@ import {
 interface CategoryAutocompleteProps {
   categories: Category[];
   required?: boolean;
-  value?: Category;
+  value?: Category | string;
   onChange?: (id: string | null) => void;
   error?: boolean;
   errorText?: string;
@@ -29,18 +29,27 @@ export default function CategoryAutocomplete({
     label: cat.name,
   });
 
+  const getValue = (v?: Category | string) => {
+    if (v instanceof Object || v === undefined) {
+      return v;
+    } else {
+      return categories.find((cat) => cat.id === v);
+    }
+  };
+
   return (
     <MenthaAutocomplete
       options={categories}
       optConverter={tfCatToOpt}
       label="Category"
       required={required}
-      value={value}
+      value={getValue(value)}
       onChange={(value: AutocompleteOption | null) =>
         onChange && value ? onChange(value.id) : null
       }
       error={error}
       errorText={errorText}
+      minWidth={200}
     />
   );
 }

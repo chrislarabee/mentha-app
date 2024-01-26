@@ -19,6 +19,7 @@ def test_transaction_validation():
                 "id": "a3427517-d9e6-49a0-8cf2-86e7fbdc7be4",
                 "fitId": "123",
                 "amt": 1.23,
+                "type": "debit",
                 "date": "2023-11-11T00:00:00.00000",
                 "name": "foo",
                 "category": "6c47e0cc-b47c-4661-bda3-8e8077fed6c7",

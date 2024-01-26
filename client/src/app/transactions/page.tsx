@@ -1,8 +1,8 @@
 "use client";
 
-import FilterManager from "@/components/FilterManager";
 import CategoryAutocomplete from "@/components/CategoryAutocomplete";
 import CenteredModal from "@/components/CenteredModal";
+import FilterManager from "@/components/FilterManager";
 import MenthaTable from "@/components/MenthaTable";
 import { useCategoriesByOwnerFlat } from "@/hooks/categoryHooks";
 import {
@@ -17,30 +17,163 @@ import {
   currencyFormatter,
 } from "@/schemas/shared";
 import {
+  Transaction,
+  TransactionInput,
   TransactionLabels,
   transactionInputSchema,
+  transactionInputSchemas,
 } from "@/schemas/transaction";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { AltRoute, Edit } from "@mui/icons-material";
+import { Add, AltRoute, Close, Edit } from "@mui/icons-material";
 import {
   Button,
   CircularProgress,
   Container,
+  IconButton,
   Paper,
   Stack,
+  TextField,
+  Typography,
 } from "@mui/material";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import MenthaSelect from "@/components/MenthaSelect";
+import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
+import { v4 as uuid4 } from "uuid";
+
+interface SplitTransactionProps {
+  open: boolean;
+  onClose: () => void;
+  transaction: Transaction;
+  categories: Category[];
+  onSubmit?: (trans: TransactionInput[]) => void;
+}
+
+function SplitTransaction({
+  open,
+  onClose,
+  transaction,
+  categories,
+  onSubmit,
+}: SplitTransactionProps) {
+  const transactionToInput = (): TransactionInput => ({
+    id: transaction.id,
+    fitId: transaction.fitId,
+    amt: transaction.amt,
+    type: transaction.type,
+    date: transaction.date,
+    name: transaction.name,
+    category: transaction.category.id,
+    account: transaction.account,
+    owner: transaction.owner,
+  });
+  const total = transaction.amt;
+  const { control } = useForm({
+    resolver: yupResolver(transactionInputSchemas),
+    defaultValues: { inputs: [transactionToInput()] },
+  });
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "inputs",
+  });
+  const transactions = useWatch({ control, name: "inputs" });
+
+  const getSplitTotal = () =>
+    transactions.reduce((prev, current) => prev + Number(current.amt), 0);
+
+  const generateTransactionInput = (
+    amt: number,
+    category: string = UNCATEGORIZED
+  ): TransactionInput => ({
+    fitId: transaction.fitId,
+    amt: amt,
+    type: transaction.type,
+    date: transaction.date,
+    name: transaction.name,
+    category: category,
+    account: transaction.account,
+    owner: transaction.owner,
+  });
+
+  return (
+    <CenteredModal open={open} onClose={onClose} heading="Split Transaction">
+      <Stack spacing={1}>
+        {fields.map((_, idx) => {
+          return (
+            <Stack key={uuid4()} direction="row" spacing={1}>
+              <Controller
+                name={`inputs.${idx}.amt`}
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    fullWidth
+                    value={field.value}
+                    InputProps={{ startAdornment: "$" }}
+                    type="number"
+                    onChange={field.onChange}
+                    autoFocus
+                  />
+                )}
+              />
+              <Controller
+                name={`inputs.${idx}.category`}
+                control={control}
+                render={({ field }) => (
+                  <CategoryAutocomplete
+                    categories={categories}
+                    value={field.value}
+                    onChange={field.onChange}
+                  />
+                )}
+              />
+              <IconButton onClick={() => remove(idx)}>
+                <Close />
+              </IconButton>
+            </Stack>
+          );
+        })}
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+        >
+          <Typography variant="subtitle2">
+            {currencyFormatter.format(getSplitTotal())} /{" "}
+            {currencyFormatter.format(total)}
+          </Typography>
+          <Button
+            variant="outlined"
+            startIcon={<Add />}
+            onClick={() => {
+              append(generateTransactionInput(total - getSplitTotal()));
+            }}
+          >
+            Add Split
+          </Button>
+        </Stack>
+        <Button
+          variant="contained"
+          disabled={total - getSplitTotal() != 0}
+          onClick={onSubmit ? () => onSubmit(transactions) : undefined}
+        >
+          Apply
+        </Button>
+      </Stack>
+    </CenteredModal>
+  );
+}
 
 export default function TransactionsPage() {
   const [filters, setFilters] = useState<Record<string, QueryFilterParam>>({});
   const [query, setQuery] = useState<MenthaQuery>({
-    sorts: [{ field: "date", direction: "desc" }],
+    sorts: [
+      { field: "date", direction: "desc" },
+      { field: "name", direction: "asc" },
+    ],
     filters: [],
   });
   const [catModalOpen, setCatModalOpen] = useState(false);
+  const [splitModalOpen, setSplitModalOpen] = useState(false);
   const [newCat, setNewCat] = useState<string>(UNCATEGORIZED);
+  const [splitTransaction, setSplitTransaction] = useState<Transaction>();
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
     pageSize: 50,
@@ -64,6 +197,11 @@ export default function TransactionsPage() {
     setCatModalOpen(false);
     setNewCat(UNCATEGORIZED);
     reset();
+  };
+
+  const closeSplitModal = () => {
+    setSplitModalOpen(false);
+    setSplitTransaction(undefined);
   };
 
   const findTranById = (id: string) => {
@@ -119,7 +257,13 @@ export default function TransactionsPage() {
         {
           label: "Split Transaction",
           icon: <AltRoute sx={{ transform: "rotate(90deg)" }} />,
-          onClick: (transactionId: string) => {},
+          onClick: (transactionId: string) => {
+            let tran = findTranById(transactionId);
+            if (tran) {
+              setSplitTransaction(tran);
+              setSplitModalOpen(true);
+            }
+          },
         },
       ]}
     >
@@ -159,6 +303,20 @@ export default function TransactionsPage() {
 
   return (
     <Container component={Paper} sx={{ padding: "20px 0px" }}>
+      {categories && splitTransaction && (
+        <SplitTransaction
+          open={splitModalOpen}
+          onClose={closeSplitModal}
+          transaction={splitTransaction}
+          categories={categories.results}
+          onSubmit={async (trans) => {
+            for (let i = 0; i < trans.length; i++) {
+              await updateMutation.mutate(trans[i]);
+            }
+            closeSplitModal();
+          }}
+        />
+      )}
       <CenteredModal open={catModalOpen} onClose={resetCatSelect}>
         {categories && (
           <Stack spacing={1}>

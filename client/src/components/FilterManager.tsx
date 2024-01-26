@@ -13,7 +13,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { ComponentType, useState } from "react";
+import { useState } from "react";
 import { v4 as uuid4 } from "uuid";
 import MenthaSelect from "./MenthaSelect";
 import CategoryAutocomplete from "./CategoryAutocomplete";

@@ -20,6 +20,7 @@ interface MenthaAutocompleteProps<T> {
   onChange?: (value: AutocompleteOption | null) => void;
   error?: boolean;
   errorText?: string;
+  minWidth?: number;
 }
 
 export default function MenthaAutocomplete<T>({
@@ -31,14 +32,17 @@ export default function MenthaAutocomplete<T>({
   onChange,
   error,
   errorText,
+  minWidth,
 }: MenthaAutocompleteProps<T>) {
   return (
     <Autocomplete
       aria-required={required}
       options={options.map((opt) => optConverter(opt))}
+      fullWidth
       value={value && optConverter(value)}
       onChange={(event, value) => (onChange ? onChange(value) : null)}
       isOptionEqualToValue={(option, value) => option.id === value.id}
+      sx={{ minWidth: minWidth }}
       renderInput={(params) => (
         <TextField
           {...params}

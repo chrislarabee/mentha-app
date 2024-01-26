@@ -100,6 +100,9 @@ class Importer:
         return Transaction(
             id=uuid4(),
             fitId=ofxtrn.fit_id,
+            # Not currently making amt negative for debit trn_types as all
+            # current import files already use that convention. Worth revisiting
+            # if files with different conventions are ever imported.
             amt=ofxtrn.trn_amt,
             date=ofxtrn.dt_posted,
             name=ofxtrn.name,
