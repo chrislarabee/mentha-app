@@ -244,6 +244,7 @@ export default function TransactionsPage() {
                 id: tran.id,
                 fitId: tran.fitId,
                 amt: tran.amt,
+                type: tran.type,
                 date: tran.date,
                 name: tran.name,
                 category: tran.category.id,
@@ -333,9 +334,9 @@ export default function TransactionsPage() {
               <Button
                 variant="contained"
                 fullWidth
-                onClick={handleSubmit((data) => {
+                onClick={handleSubmit(async (data) => {
                   data.category = newCat;
-                  updateMutation.mutate(data);
+                  await updateMutation.mutate(data);
                   resetCatSelect();
                 })}
               >

@@ -2,7 +2,7 @@
 
 import CategoryAutocomplete from "@/components/CategoryAutocomplete";
 import CenteredModal from "@/components/CenteredModal";
-import FloatingAction from "@/components/FloatingAction";
+import FloatingActions from "@/components/FloatingActions";
 import Form from "@/components/Form";
 import MenthaSelect from "@/components/MenthaSelect";
 import { SmallIconButton } from "@/components/buttons";
@@ -231,122 +231,127 @@ export default function BudgetsPage() {
     }, 0);
 
   return (
-    <Container>
-      <CenteredModal
-        heading={modalHeading}
-        open={formModalOpen}
-        onClose={() => setFormModalOpen(false)}
-      >
-        <Stack spacing={1}>
-          <Form
-            mutation={updateMutation}
-            formConfig={formReturn}
-            labels={BudgetInputLabels}
-            textFields={[
-              {
-                field: "amt",
-                type: "number",
-                required: true,
-                inputAdornment: { pos: "start", adornment: "$" },
-              },
-              {
-                field: "period",
-                type: "number",
-                required: true,
-                inputAdornment: { pos: "end", adornment: "month(s)" },
-              },
-              { field: "createDate", type: "date", required: true },
-            ]}
-            onSubmit={submit}
-            onSubmitSuccess={() => {
-              reset(defaultInput);
-              setResultCat(UNCATEGORIZED);
-              setFormModalOpen(false);
-            }}
-          >
-            <Typography>
-              You can backdate the creation date if desired, just be aware that
-              it will affect budget history retroactively.
-            </Typography>
-            {categories && (
-              <CategoryAutocomplete
-                categories={categories.results}
-                required
-                value={findCatById(resultCat, categories.results)}
-                onChange={(id) => (id ? setResultCat(id) : UNCATEGORIZED)}
-              />
-            )}
-          </Form>
-        </Stack>
-      </CenteredModal>
-      <Stack spacing={1}>
-        <Card>
-          <Box sx={{ width: "100%", padding: "15px" }}>
-            <Stack
-              direction="row"
-              alignItems="center"
-              justifyContent="space-between"
+    <Box>
+      <Container sx={{ mb: 7 }}>
+        <CenteredModal
+          heading={modalHeading}
+          open={formModalOpen}
+          onClose={() => setFormModalOpen(false)}
+        >
+          <Stack spacing={1}>
+            <Form
+              mutation={updateMutation}
+              formConfig={formReturn}
+              labels={BudgetInputLabels}
+              textFields={[
+                {
+                  field: "amt",
+                  type: "number",
+                  required: true,
+                  inputAdornment: { pos: "start", adornment: "$" },
+                },
+                {
+                  field: "period",
+                  type: "number",
+                  required: true,
+                  inputAdornment: { pos: "end", adornment: "month(s)" },
+                },
+                { field: "createDate", type: "date", required: true },
+              ]}
+              onSubmit={submit}
+              onSubmitSuccess={() => {
+                reset(defaultInput);
+                setResultCat(UNCATEGORIZED);
+                setFormModalOpen(false);
+              }}
             >
-              {netIncome !== undefined && (
-                <Typography
-                  variant="h6"
-                  component="div"
-                  sx={{
-                    textTransform: "uppercase",
-                  }}
-                >
-                  Net income this month:{" "}
-                  <Box
-                    display="inline"
+              <Typography>
+                You can backdate the creation date if desired, just be aware
+                that it will affect budget history retroactively.
+              </Typography>
+              {categories && (
+                <CategoryAutocomplete
+                  categories={categories.results}
+                  required
+                  value={findCatById(resultCat, categories.results)}
+                  onChange={(id) => (id ? setResultCat(id) : UNCATEGORIZED)}
+                />
+              )}
+            </Form>
+          </Stack>
+        </CenteredModal>
+        <Stack spacing={1}>
+          <Card>
+            <Box sx={{ width: "100%", padding: "15px" }}>
+              <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
+              >
+                {netIncome !== undefined && (
+                  <Typography
+                    variant="h6"
+                    component="div"
                     sx={{
-                      color:
-                        netIncome > 0
-                          ? "green"
-                          : netIncome < 0
-                          ? "red"
-                          : undefined,
+                      textTransform: "uppercase",
                     }}
                   >
-                    {currencyFormatter.format(netIncome)}
-                  </Box>
-                </Typography>
-              )}
-              {budgetSelector}
-            </Stack>
-          </Box>
-        </Card>
-        <Typography variant="h5">Income</Typography>
-        {incomeBudgets?.map((budget) => (
-          <BudgetCard
-            key={budget.id}
-            budget={budget}
-            onEdit={edit}
-            onDelete={deleteBudget}
-          />
-        ))}
-        <Typography variant="h5">Budgets</Typography>
-        {otherBudgets?.map((budget) => (
-          <BudgetCard
-            key={budget.id}
-            budget={budget}
-            onEdit={edit}
-            onDelete={deleteBudget}
-          />
-        ))}
-        <Typography variant="h5">Unallocated Transactions</Typography>
-        {unallocatedBudgetCard}
-      </Stack>
+                    Net income this month:{" "}
+                    <Box
+                      display="inline"
+                      sx={{
+                        color:
+                          netIncome > 0
+                            ? "green"
+                            : netIncome < 0
+                            ? "red"
+                            : undefined,
+                      }}
+                    >
+                      {currencyFormatter.format(netIncome)}
+                    </Box>
+                  </Typography>
+                )}
+                {budgetSelector}
+              </Stack>
+            </Box>
+          </Card>
+          <Typography variant="h5">Income</Typography>
+          {incomeBudgets?.map((budget) => (
+            <BudgetCard
+              key={budget.id}
+              budget={budget}
+              onEdit={edit}
+              onDelete={deleteBudget}
+            />
+          ))}
+          <Typography variant="h5">Budgets</Typography>
+          {otherBudgets?.map((budget) => (
+            <BudgetCard
+              key={budget.id}
+              budget={budget}
+              onEdit={edit}
+              onDelete={deleteBudget}
+            />
+          ))}
+          <Typography variant="h5">Unallocated Transactions</Typography>
+          {unallocatedBudgetCard}
+        </Stack>
+      </Container>
       {categories && (
-        <FloatingAction
-          variant="primary"
-          onClick={() => {
-            setModalHeading("Add Budget");
-            setFormModalOpen(true);
-          }}
-        >
-          <Add />
-        </FloatingAction>
+        <FloatingActions
+          buttons={[
+            {
+              color: "primary",
+              onClick: () => {
+                setModalHeading("Add Budget");
+                setFormModalOpen(true);
+              },
+              children: <Add />,
+            },
+          ]}
+        />
       )}
-    </Container>
+    </Box>
   );
 }

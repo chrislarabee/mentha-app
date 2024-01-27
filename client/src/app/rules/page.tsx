@@ -3,7 +3,8 @@
 import CategoryAutocomplete from "@/components/CategoryAutocomplete";
 import CenteredModal from "@/components/CenteredModal";
 import DeletePrompt from "@/components/DeletePrompt";
-import FloatingAction from "@/components/FloatingAction";
+import FilterManager from "@/components/FilterManager";
+import FloatingActions from "@/components/FloatingActions";
 import Form from "@/components/Form";
 import MenthaTable from "@/components/MenthaTable";
 import { useCategoriesByOwnerFlat } from "@/hooks/categoryHooks";
@@ -23,12 +24,21 @@ import {
 } from "@/schemas/rule";
 import {
   MenthaQuery,
+  QueryFilterParam,
   SYSTEM_USER,
   removeNullsFromArray,
 } from "@/schemas/shared";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { Add, Delete, Edit } from "@mui/icons-material";
-import { Box, Button, Container, Paper, Snackbar, Stack } from "@mui/material";
+import {
+  Box,
+  Button,
+  Container,
+  Paper,
+  Snackbar,
+  Stack,
+  Typography,
+} from "@mui/material";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -39,6 +49,7 @@ export default function RulesPage() {
   const [toDelete, setToDelete] = useState<Rule>();
   const [modalHeading, setModalHeading] = useState("Add New Rule");
   const [toastOpen, setToastOpen] = useState(false);
+  const [filters, setFilters] = useState<Record<string, QueryFilterParam>>({});
   const [query, setQuery] = useState<MenthaQuery>({
     sorts: [{ field: "priority", direction: "asc" }],
     filters: [],
@@ -94,7 +105,6 @@ export default function RulesPage() {
       labels={RuleLabels}
       rows={rules.results}
       totalRows={rules.totalHitCount}
-      justifyChildren="flex-end"
       columns={[
         {
           field: "resultCategory",
@@ -139,13 +149,28 @@ export default function RulesPage() {
         },
       ]}
     >
-      <Button
-        variant="contained"
-        onClick={() => applyRulesMutation.mutate(SYSTEM_USER)}
-        disabled={applyRulesMutation.isPending}
-      >
-        Apply Rules
-      </Button>
+      <FilterManager
+        columnOptions={[
+          {
+            field: "resultCategory",
+            type: "category",
+            renderFilterTerm: (term) => {
+              const result = categories?.results.find((cat) => cat.id === term);
+              return result?.name || term;
+            },
+          },
+        ]}
+        optionLabels={RuleLabels}
+        filters={filters}
+        categories={categories?.results}
+        setFilters={(filters) => {
+          setFilters(filters);
+          setQuery((prev) => ({
+            sorts: prev.sorts,
+            filters: Object.values(filters),
+          }));
+        }}
+      />
     </MenthaTable>
   );
 
@@ -212,19 +237,28 @@ export default function RulesPage() {
         onClose={() => setToastOpen(false)}
         autoHideDuration={3000}
       />
-      <Container component={Paper} sx={{ padding: "20px 0px" }}>
+      <Container component={Paper} sx={{ padding: "20px 0px", mb: 7 }}>
         {ruleTable}
       </Container>
       {categories && (
-        <FloatingAction
-          variant="primary"
-          onClick={() => {
-            setFormModalOpen(true);
-            setModalHeading("Add Rule");
-          }}
-        >
-          <Add />
-        </FloatingAction>
+        <FloatingActions
+          buttons={[
+            {
+              onClick: () => applyRulesMutation.mutate(SYSTEM_USER),
+              disabled: applyRulesMutation.isPending,
+              children: "Apply Rules",
+              variant: "extended",
+              color: "secondary",
+            },
+            {
+              onClick: () => {
+                setFormModalOpen(true);
+                setModalHeading("Add Rule");
+              },
+              children: <Add />,
+            },
+          ]}
+        />
       )}
     </Box>
   );
