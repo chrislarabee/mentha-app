@@ -218,6 +218,7 @@ export default function TransactionsPage() {
       labels={TransactionLabels}
       rows={transactions.results}
       totalRows={transactions.totalHitCount}
+      justifyChildren="space-between"
       columns={[
         {
           field: "date",
@@ -293,6 +294,32 @@ export default function TransactionsPage() {
           }));
         }}
       />
+      <Button
+        variant="outlined"
+        disabled={
+          Object.values(filters).find(
+            (value) =>
+              value.field === "category" && value.term === UNCATEGORIZED
+          ) !== undefined
+        }
+        onClick={() => {
+          let newFilters: Record<string, QueryFilterParam> = {
+            ...filters,
+            [uuid4()]: {
+              field: "category",
+              op: "=",
+              term: UNCATEGORIZED,
+            },
+          };
+          setFilters(newFilters);
+          setQuery((prev) => ({
+            sorts: prev.sorts,
+            filters: Object.values(newFilters),
+          }));
+        }}
+      >
+        Uncategorized Only
+      </Button>
     </MenthaTable>
   );
 
