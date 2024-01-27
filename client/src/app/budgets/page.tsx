@@ -271,9 +271,9 @@ export default function BudgetsPage() {
               </Typography>
               {categories && (
                 <CategoryAutocomplete
-                  categories={categories.results}
+                  categories={categories}
                   required
-                  value={findCatById(resultCat, categories.results)}
+                  value={findCatById(resultCat, categories)}
                   onChange={(id) => (id ? setResultCat(id) : UNCATEGORIZED)}
                 />
               )}

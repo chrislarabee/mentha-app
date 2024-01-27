@@ -278,12 +278,12 @@ export default function TransactionsPage() {
             field: "category",
             type: "category",
             renderFilterTerm: (term) => {
-              const result = categories.results.find((cat) => cat.id === term);
+              const result = categories.find((cat) => cat.id === term);
               return result?.name || term;
             },
           },
         ]}
-        categories={categories.results}
+        categories={categories}
         optionLabels={TransactionLabels}
         filters={filters}
         setFilters={(filters) => {
@@ -336,7 +336,7 @@ export default function TransactionsPage() {
           open={splitModalOpen}
           onClose={closeSplitModal}
           transaction={splitTransaction}
-          categories={categories.results}
+          categories={categories}
           onSubmit={async (trans) => {
             for (let i = 0; i < trans.length; i++) {
               await updateMutation.mutate(trans[i]);
@@ -350,8 +350,8 @@ export default function TransactionsPage() {
           <Stack spacing={1}>
             <CategoryAutocomplete
               required
-              categories={categories.results}
-              value={findCatById(newCat, categories.results)}
+              categories={categories}
+              value={findCatById(newCat, categories)}
               onChange={(id) => id && setNewCat(id)}
             />
             <Stack direction="row" justifyContent="space-evenly">

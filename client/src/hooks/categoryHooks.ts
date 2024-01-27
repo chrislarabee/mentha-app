@@ -11,6 +11,7 @@ import {
   CategoryInput,
   PrimaryCategory,
   categorySchema,
+  categorySchemaList,
   pagedCategoriesSchema,
   pagedPrimaryCategoriesSchema,
 } from "@/schemas/category";
@@ -47,7 +48,7 @@ export function useCategoriesByOwnerFlat(ownerId: string) {
       `/categories/by-owner/${ownerId}/flat`,
       {}
     );
-    const results = await pagedCategoriesSchema.validate(resp.data);
+    const results = await categorySchemaList.validate(resp.data);
     return results;
   };
   return useQuery({

@@ -147,14 +147,14 @@ export default function RulesPage() {
             field: "resultCategory",
             type: "category",
             renderFilterTerm: (term) => {
-              const result = categories?.results.find((cat) => cat.id === term);
+              const result = categories?.find((cat) => cat.id === term);
               return result?.name || term;
             },
           },
         ]}
         optionLabels={RuleLabels}
         filters={filters}
-        categories={categories?.results}
+        categories={categories}
         setFilters={(filters) => {
           setFilters(filters);
           setQuery((prev) => ({
@@ -198,9 +198,9 @@ export default function RulesPage() {
           >
             {categories && (
               <CategoryAutocomplete
-                categories={categories.results}
+                categories={categories}
                 required
-                value={findCatById(resultCat, categories.results)}
+                value={findCatById(resultCat, categories)}
                 onChange={(id) => (id ? setResultCat(id) : UNCATEGORIZED)}
               />
             )}
