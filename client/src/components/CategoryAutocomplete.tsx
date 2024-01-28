@@ -6,6 +6,7 @@ import {
   FieldValues,
   UseControllerProps,
 } from "react-hook-form";
+import { sortCategories } from "@/schemas/shared";
 
 interface CategoryAutocompleteProps {
   categories: Category[];
@@ -39,7 +40,7 @@ export default function CategoryAutocomplete({
 
   return (
     <MenthaAutocomplete
-      options={categories}
+      options={sortCategories(categories, "first")}
       optConverter={tfCatToOpt}
       label="Category"
       required={required}

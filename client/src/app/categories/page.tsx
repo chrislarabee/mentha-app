@@ -14,7 +14,7 @@ import {
   CategoryInputLabels,
   categoryInputSchema,
 } from "@/schemas/category";
-import { SYSTEM_USER } from "@/schemas/shared";
+import { SYSTEM_USER, sortCategories } from "@/schemas/shared";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { Delete, Edit, ExpandMore, MoveDown } from "@mui/icons-material";
 import {
@@ -47,10 +47,7 @@ export default function CategoriesPage() {
     owner: SYSTEM_USER,
   };
 
-  const { data: categories, isLoading } = useCategoriesByOwner(SYSTEM_USER, {
-    sorts: [],
-    filters: [],
-  });
+  const { data: categories, isLoading } = useCategoriesByOwner(SYSTEM_USER);
 
   const updateMutation = useUpdateCategory();
   const deleteMutation = useDeleteCategory();
@@ -117,7 +114,7 @@ export default function CategoriesPage() {
 
   const categoryAccordions = categories && (
     <List>
-      {categories.results.map((cat) => (
+      {sortCategories(categories).map((cat) => (
         <Accordion key={cat.id} disableGutters>
           <AccordionSummary expandIcon={<ExpandMore />}>
             <Typography variant="subtitle1">{cat.name}</Typography>
@@ -133,7 +130,7 @@ export default function CategoriesPage() {
                       No subcategories found.
                     </Typography>
                   ) : (
-                    cat.subcategories.map((subcat) => (
+                    sortCategories(cat.subcategories).map((subcat) => (
                       <Stack
                         key={subcat.id}
                         direction="row"
@@ -187,7 +184,7 @@ export default function CategoriesPage() {
   const parentCategoryReassignment = categories && (
     <Stack spacing={1}>
       <Autocomplete
-        options={categories.results
+        options={categories
           .filter((cat) => cat.id !== getValues().id)
           .map((cat) => ({
             id: cat.id,

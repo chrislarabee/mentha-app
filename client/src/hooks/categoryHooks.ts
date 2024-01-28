@@ -1,22 +1,18 @@
+import {
+  Category,
+  CategoryInput,
+  categorySchema,
+  categorySchemaList,
+  primaryCategorySchemaList,
+} from "@/schemas/category";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { axiosInstance } from "./endpoints";
 import {
   BaseEndpoint,
   deleteRecord,
   getRecord,
-  getRecordsByOwner,
   updateRecord,
 } from "./genericEndpoints";
-import {
-  Category,
-  CategoryInput,
-  PrimaryCategory,
-  categorySchema,
-  categorySchemaList,
-  pagedCategoriesSchema,
-  pagedPrimaryCategoriesSchema,
-} from "@/schemas/category";
-import { axiosInstance } from "./endpoints";
-import { MenthaQuery } from "@/schemas/shared";
 
 const baseEndpoint: BaseEndpoint = "categories";
 const queryKey = "category";
@@ -29,16 +25,18 @@ export function useCategory(id: string) {
   });
 }
 
-export function useCategoriesByOwner(ownerId: string, query: MenthaQuery) {
+export function useCategoriesByOwner(ownerId: string) {
+  const getAllCategoriesByOwner = async (ownerId: string) => {
+    const resp = await axiosInstance.get(
+      `/categories/by-owner/${ownerId}/all`,
+      {}
+    );
+    const results = await primaryCategorySchemaList.validate(resp.data);
+    return results;
+  };
   return useQuery({
-    queryKey: [queryKey, "by-owner", query],
-    queryFn: async () =>
-      await getRecordsByOwner<PrimaryCategory>(
-        ownerId,
-        baseEndpoint,
-        pagedPrimaryCategoriesSchema,
-        query
-      ),
+    queryKey: [queryKey, "by-owner"],
+    queryFn: async () => await getAllCategoriesByOwner(ownerId),
   });
 }
 

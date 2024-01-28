@@ -33,8 +33,13 @@ class CategoryRouter(
         self.apply_methods_to_fastapi_router(router, self._plural)
 
         router.add_api_route(
+            "/by-owner/{ownerId}/all",
+            self.get_primary_by_owner,
+            summary="Get Categories By Owner (All)",
+        )
+        router.add_api_route(
             "/by-owner/{ownerId}/flat",
-            self.get_all_by_owner,
+            self.get_all_by_owner_flat,
             summary="Get Categories By Owner (Flattened)",
         )
 
@@ -69,6 +74,10 @@ class CategoryRouter(
 
         return raw_result.transform(_transform)
 
-    async def get_all_by_owner(self, ownerId: UUID) -> list[Category]:
+    async def get_all_by_owner_flat(self, ownerId: UUID) -> list[Category]:
         raw_result = await utils.page_through_query(self._table, owner=ownerId)
         return [*raw_result, *SYSTEM_CATEGORIES]
+
+    async def get_primary_by_owner(self, ownerId: UUID) -> list[PrimaryCategory]:
+        raw_result = await utils.page_through_query(self._table, owner=ownerId)
+        return utils.assemble_primary_categories([*raw_result, *SYSTEM_CATEGORIES])
