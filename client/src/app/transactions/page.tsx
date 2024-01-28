@@ -226,7 +226,15 @@ export default function TransactionsPage() {
           formatter: (value: string) => new Date(value).toLocaleDateString(),
         },
         { field: "name", widthPct: 0.5 },
-        { field: "amt", type: "number", formatter: currencyFormatter.format },
+        {
+          field: "amt",
+          type: "number",
+          render: (value, row) => (
+            <div style={{ color: row.type === "credit" ? "green" : undefined }}>
+              {currencyFormatter.format(value)}
+            </div>
+          ),
+        },
         {
           field: "category",
           widthPct: 0.2,

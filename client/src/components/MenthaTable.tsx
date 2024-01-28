@@ -1,13 +1,14 @@
 import { Labels } from "@/schemas/shared";
-import { ReactElement, ReactNode, useState } from "react";
+import { Stack, Tooltip } from "@mui/material";
 import {
   DataGrid,
   GridActionsCellItem,
   GridColDef,
+  GridRenderCellParams,
   GridValueFormatterParams,
   GridValueGetterParams,
 } from "@mui/x-data-grid";
-import { Stack, Tooltip } from "@mui/material";
+import { ReactElement, ReactNode } from "react";
 
 export interface PaginationModel {
   page: number;
@@ -20,7 +21,7 @@ export interface ColumnDefinition<T> {
   type?: "string" | "date" | "number" | "singleSelect";
   formatter?: (value: any) => string;
   getter?: (value: any) => string;
-  renderComponent?: (value: any) => ReactElement;
+  render?: (value: any, row: T) => ReactElement;
   editable?: boolean;
 }
 
@@ -67,6 +68,16 @@ export default function MenthaTable<T extends Record<string, any>>({
     }
   });
 
+  const generateRenderCell = (
+    def: ColumnDefinition<T>
+  ): ((params: GridRenderCellParams) => ReactElement) | undefined => {
+    const renderFunc = def.render;
+    if (renderFunc) {
+      return (params: GridRenderCellParams) =>
+        renderFunc(params.value, params.row);
+    }
+  };
+
   const gridColDef: GridColDef[] = columnDef.map((def) => ({
     field: def.field.toString(),
     headerName: labels[def.field],
@@ -77,6 +88,7 @@ export default function MenthaTable<T extends Record<string, any>>({
       def.formatter ? def.formatter(params.value) : params.value,
     valueGetter: (params: GridValueGetterParams) =>
       def.getter ? def.getter(params.value) : params.value,
+    renderCell: generateRenderCell(def),
   }));
 
   if (actions) {
