@@ -1,10 +1,4 @@
 import * as yup from "yup";
-import {
-  Category,
-  CategoryInput,
-  PrimaryCategory,
-  UNCATEGORIZED,
-} from "./category";
 
 export const SYSTEM_USER = "9b4923d8-53aa-4f40-b602-9e4765420c07";
 
@@ -105,18 +99,4 @@ export function generateMonthArray(
     result.sort((a, b) => b.getTime() - a.getTime());
   }
   return result;
-}
-
-export function sortCategories<C extends Category>(
-  categories: C[],
-  uncategorizedPos: "first" | "last" | "alpha" = "last"
-) {
-  return categories.sort((catA, catB) => {
-    if (catA.id === UNCATEGORIZED && uncategorizedPos !== "alpha") {
-      return uncategorizedPos === "last" ? 1 : -1;
-    } else if (catB.id === UNCATEGORIZED && uncategorizedPos !== "alpha") {
-      return uncategorizedPos === "last" ? -1 : 1;
-    }
-    return catA.name.localeCompare(catB.name);
-  });
 }

@@ -13,8 +13,9 @@ import {
   Category,
   CategoryInputLabels,
   categoryInputSchema,
+  sortCategories,
 } from "@/schemas/category";
-import { SYSTEM_USER, sortCategories } from "@/schemas/shared";
+import { SYSTEM_USER } from "@/schemas/shared";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { Delete, Edit, ExpandMore, MoveDown } from "@mui/icons-material";
 import {

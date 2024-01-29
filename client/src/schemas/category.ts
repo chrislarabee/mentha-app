@@ -68,3 +68,17 @@ export const findCatById = (id: string, cats: Category[]) => {
   }
   return result;
 };
+
+export function sortCategories<C extends Category>(
+  categories: C[],
+  uncategorizedPos: "first" | "last" | "alpha" = "last"
+) {
+  return categories.sort((catA, catB) => {
+    if (catA.id === UNCATEGORIZED && uncategorizedPos !== "alpha") {
+      return uncategorizedPos === "last" ? 1 : -1;
+    } else if (catB.id === UNCATEGORIZED && uncategorizedPos !== "alpha") {
+      return uncategorizedPos === "last" ? -1 : 1;
+    }
+    return catA.name.localeCompare(catB.name);
+  });
+}

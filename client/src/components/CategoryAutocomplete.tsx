@@ -1,4 +1,4 @@
-import { Category } from "@/schemas/category";
+import { Category, sortCategories } from "@/schemas/category";
 import MenthaAutocomplete, { AutocompleteOption } from "./MenthaAutocomplete";
 import {
   Controller,
@@ -6,7 +6,6 @@ import {
   FieldValues,
   UseControllerProps,
 } from "react-hook-form";
-import { sortCategories } from "@/schemas/shared";
 
 interface CategoryAutocompleteProps {
   categories: Category[];
