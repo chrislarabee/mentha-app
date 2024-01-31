@@ -1,5 +1,6 @@
 "use client";
 
+import BasicAccordion from "@/components/BasicAccordion";
 import CenteredModal from "@/components/CenteredModal";
 import DeletePrompt from "@/components/DeletePrompt";
 import Form from "@/components/Form";
@@ -17,11 +18,8 @@ import {
 } from "@/schemas/category";
 import { SYSTEM_USER } from "@/schemas/shared";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { Delete, Edit, ExpandMore, MoveDown } from "@mui/icons-material";
+import { Delete, Edit, MoveDown } from "@mui/icons-material";
 import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
   Autocomplete,
   Button,
   CircularProgress,
@@ -116,68 +114,63 @@ export default function CategoriesPage() {
   const categoryAccordions = categories && (
     <List>
       {sortCategories(categories).map((cat) => (
-        <Accordion key={cat.id} disableGutters>
-          <AccordionSummary expandIcon={<ExpandMore />}>
-            <Typography variant="subtitle1">{cat.name}</Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Stack spacing={1}>
-              <Container>
-                <Stack>
-                  <Typography variant="subtitle2">Subcategories</Typography>
-                  <Divider />
-                  {cat.subcategories.length === 0 ? (
-                    <Typography variant="caption" color="grey">
-                      No subcategories found.
-                    </Typography>
-                  ) : (
-                    sortCategories(cat.subcategories).map((subcat) => (
-                      <Stack
-                        key={subcat.id}
-                        direction="row"
-                        justifyContent="space-between"
-                        alignItems="center"
-                      >
-                        <Typography variant="caption">{subcat.name}</Typography>
-                        <EditButtons data={subcat} />
-                      </Stack>
-                    ))
-                  )}
-                </Stack>
-              </Container>
-              <Divider />
-              <Stack
-                direction="row"
-                justifyContent="space-between"
-                alignItems="center"
-              >
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={() => {
-                    setModalHeading(`Add Subcategory to ${cat.name}`);
-                    setNewCatOpen(true);
-                    reset({
-                      ...defaultValues,
-                      parentCategory: cat.id,
-                    });
-                  }}
-                >
-                  Add Subcategory
-                </Button>
-                {/* TODO: Hide these buttons if the user's id doesn't match the owner id 
-                (i.e. if the owner is the system user) */}
-                <EditButtons
-                  data={cat}
-                  assignParentDisabled={cat.subcategories.length > 0}
-                  editLoading={
-                    deleteMutation.isPending || updateMutation.isPending
-                  }
-                />
+        <BasicAccordion key={cat.id} heading={cat.name} headingSize="sm">
+          <Stack spacing={1}>
+            <Container>
+              <Stack>
+                <Typography variant="subtitle2">Subcategories</Typography>
+                <Divider />
+                {cat.subcategories.length === 0 ? (
+                  <Typography variant="caption" color="grey">
+                    No subcategories found.
+                  </Typography>
+                ) : (
+                  sortCategories(cat.subcategories).map((subcat) => (
+                    <Stack
+                      key={subcat.id}
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="center"
+                    >
+                      <Typography variant="caption">{subcat.name}</Typography>
+                      <EditButtons data={subcat} />
+                    </Stack>
+                  ))
+                )}
               </Stack>
+            </Container>
+            <Divider />
+            <Stack
+              direction="row"
+              justifyContent="space-between"
+              alignItems="center"
+            >
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => {
+                  setModalHeading(`Add Subcategory to ${cat.name}`);
+                  setNewCatOpen(true);
+                  reset({
+                    ...defaultValues,
+                    parentCategory: cat.id,
+                  });
+                }}
+              >
+                Add Subcategory
+              </Button>
+              {/* TODO: Hide these buttons if the user's id doesn't match the owner id 
+                (i.e. if the owner is the system user) */}
+              <EditButtons
+                data={cat}
+                assignParentDisabled={cat.subcategories.length > 0}
+                editLoading={
+                  deleteMutation.isPending || updateMutation.isPending
+                }
+              />
             </Stack>
-          </AccordionDetails>
-        </Accordion>
+          </Stack>
+        </BasicAccordion>
       ))}
     </List>
   );

@@ -11,7 +11,9 @@ import { ReactNode } from "react";
 
 interface BasicAccordionProps {
   heading: string;
+  headingSize?: "sm" | "lg";
   children?: ReactNode;
+  leadingIcon?: ReactNode;
   defaultExpanded?: boolean;
   noBackground?: boolean;
 }
@@ -19,6 +21,8 @@ interface BasicAccordionProps {
 export default function BasicAccordion({
   heading,
   children,
+  headingSize = "lg",
+  leadingIcon,
   defaultExpanded,
   noBackground,
 }: BasicAccordionProps) {
@@ -26,6 +30,7 @@ export default function BasicAccordion({
     ? { background: "transparent" }
     : {};
   const summarySx: SxProps = noBackground ? { color: "white" } : {};
+  const hSize = headingSize === "lg" ? "h5" : "subtitle1";
   return (
     <Accordion
       disableGutters
@@ -36,8 +41,9 @@ export default function BasicAccordion({
         expandIcon={<ExpandMore sx={summarySx} />}
         sx={summarySx}
       >
-        <Stack direction="row">
-          <Typography variant="h5">{heading}</Typography>
+        <Stack direction="row" spacing={1} alignItems="center">
+          {leadingIcon}
+          <Typography variant={hSize}>{heading}</Typography>
         </Stack>
       </AccordionSummary>
       <AccordionDetails>{children}</AccordionDetails>

@@ -1,18 +1,11 @@
 "use client";
 
+import BasicAccordion from "@/components/BasicAccordion";
 import { useAccountsByOwner } from "@/hooks/accountHooks";
 import { AccountType } from "@/schemas/account";
 import { SYSTEM_USER, convertArrayToRecordOfArrays } from "@/schemas/shared";
+import { AccountBalance, CreditCard, Savings } from "@mui/icons-material";
 import {
-  AccountBalance,
-  CreditCard,
-  ExpandMore,
-  Savings,
-} from "@mui/icons-material";
-import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
   CircularProgress,
   Container,
   Divider,
@@ -40,36 +33,32 @@ export default function AccountsPage() {
           (acct) => acct.institution.name
         )
       ).map(([instName, accts]) => (
-        <Accordion key={instName} disableGutters>
-          <AccordionSummary expandIcon={<ExpandMore />}>
-            <Stack direction="row" spacing={1}>
-              <AccountBalance />
-              <Typography variant="subtitle1">{instName}</Typography>
-            </Stack>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Stack spacing={1}>
-              <Container>
-                <Stack>
-                  <Typography variant="subtitle2">Accounts</Typography>
-                  <Divider />
-                  {accts.map((acct) => (
-                    <Stack
-                      key={acct.id}
-                      direction="row"
-                      spacing={2}
-                      alignItems="center"
-                    >
-                      {accountIconMap[acct.accountType]}
-                      <Typography variant="caption">{acct.name}</Typography>
-                    </Stack>
-                  ))}
-                </Stack>
-              </Container>
-              <Divider />
-            </Stack>
-          </AccordionDetails>
-        </Accordion>
+        <BasicAccordion
+          key={instName}
+          heading={instName}
+          leadingIcon={<AccountBalance />}
+        >
+          <Stack spacing={1}>
+            <Container>
+              <Stack>
+                <Typography variant="subtitle2">Accounts</Typography>
+                <Divider />
+                {accts.map((acct) => (
+                  <Stack
+                    key={acct.id}
+                    direction="row"
+                    spacing={2}
+                    alignItems="center"
+                  >
+                    {accountIconMap[acct.accountType]}
+                    <Typography variant="caption">{acct.name}</Typography>
+                  </Stack>
+                ))}
+              </Stack>
+            </Container>
+            <Divider />
+          </Stack>
+        </BasicAccordion>
       ))}
     </List>
   );
