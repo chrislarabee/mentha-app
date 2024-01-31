@@ -52,8 +52,14 @@ INCOME = Category(
     name="Income",
     owner=SYSTEM_USER.id,
 )
+REFUND = Category(
+    id=UUID("7251dda2-7f20-4fd6-9e23-3d5e1b0145ce"),
+    name="Return / Reimbursement / Refund",
+    owner=SYSTEM_USER.id,
+)
 
 SYSTEM_CATEGORIES = [
     UNCATEGORIZED,
     INCOME,
+    REFUND,
 ]

@@ -3,6 +3,7 @@ import { Labels, SYSTEM_USER, pagedResultsSchema } from "./shared";
 
 export const INCOME = "a3720dcc-0ba4-426d-9c41-620a0fbe0ad6";
 export const UNCATEGORIZED = "6c47e0cc-b47c-4661-bda3-8e8077fed6c7";
+export const RETURN = "7251dda2-7f20-4fd6-9e23-3d5e1b0145ce";
 
 export const categorySchema = yup.object({
   id: yup.string().required(),

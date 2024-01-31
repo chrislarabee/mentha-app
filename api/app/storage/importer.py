@@ -36,8 +36,9 @@ class Importer:
         self._rules = q_result.results
         self._rules.sort(key=lambda rule: rule.priority)
 
-    async def execute(self) -> None:
+    async def execute(self) -> int:
         imported = list[Path]()
+        import_ct = 0
         for filepath in INBOX.iterdir():
             ofx_file = read_ofx_file(filepath)
             inst_result = await self._db.institutions.query_async(
@@ -66,9 +67,11 @@ class Importer:
                 ofx_file.transactions, self._rules, acct.id, self._owner
             )
             await self._db.transactions.insert_async(*transactions)
+            import_ct += len(transactions)
             imported.append(filepath)
         for filepath in imported:
             filepath.rename(COMPLETE.joinpath(filepath.name))
+        return import_ct
 
     @classmethod
     async def check_rules_against_ofx_transactions(

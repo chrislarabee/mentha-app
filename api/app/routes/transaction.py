@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks
+from fastapi.responses import JSONResponse
 
 from app.domain.category import UNCATEGORIZED, Category
 from app.domain.core import PagedResultsModel, QueryModel
@@ -74,7 +75,7 @@ class TransactionRouter(
             page_size=pageSize,
             sorts=query.sorts,
             owner=ownerId,
-            **preprocess_filters(query.filters)
+            **preprocess_filters(query.filters),
         )
         categories = await get_categories_by_id(
             self._db.categories, [row.category for row in raw_results.results]
@@ -84,10 +85,11 @@ class TransactionRouter(
             lambda tran: self._transform(tran, categories)
         )
 
-    async def import_transactions(self, ownerId: UUID) -> None:
+    async def import_transactions(self, ownerId: UUID) -> JSONResponse:
         importer = Importer(for_owner=ownerId, db=self._db)
         await importer.refresh_rules()
-        await importer.execute()
+        result = await importer.execute()
+        return JSONResponse(f"Imported {result} transactions.")
 
     async def apply_rules(
         self,
