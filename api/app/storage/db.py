@@ -148,8 +148,6 @@ class QueryOperation(ABC):
         return NotImplemented
 
 
-# Keeping these distinct from domain.core.FilterOperator in case like/between/in
-# are added as allowed FilterOperators (they would not be allowed here):
 SIMPLE_OPS = ["=", ">", "<", ">=", "<="]
 SimpleOperator = Literal["=", ">", "<", ">=", "<="]
 
@@ -175,6 +173,10 @@ class IsIn(QueryOperation):
 
 
 class Between(QueryOperation):
+    """
+    Creates a where clause a la `field >= lower_bound AND field <= upper_bound`.
+    """
+
     def __init__(self, lower_bound: Any, upper_bound: Any) -> None:
         super().__init__((lower_bound, upper_bound))
 

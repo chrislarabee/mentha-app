@@ -89,7 +89,10 @@ class TransactionRouter(
         importer = Importer(for_owner=ownerId, db=self._db)
         await importer.refresh_rules()
         result = await importer.execute()
-        return JSONResponse(f"Imported {result} transactions.")
+        return JSONResponse(
+            f"Imported {result.import_ct} transactions. "
+            f"{result.preexisting_transactions} transactions already existed."
+        )
 
     async def apply_rules(
         self,
