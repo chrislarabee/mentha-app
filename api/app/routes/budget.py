@@ -17,7 +17,6 @@ from app.routes.router import BasicRouter
 from app.routes.utils import (
     calculate_accumulated_budget,
     gen_month_range,
-    page_through_query,
     get_categories_by_id,
     summarize_transactions_by_category,
 )
@@ -63,8 +62,7 @@ class BudgetRouter(BasicRouter[Budget[UUID], BudgetInput]):
         month: int,
     ) -> list[AllocatedBudget]:
         results = list[AllocatedBudget]()
-        raw_results = await page_through_query(
-            self._table,
+        raw_results = await self._table.page_through_query_async(
             [],
             owner=ownerId,
         )
@@ -72,8 +70,7 @@ class BudgetRouter(BasicRouter[Budget[UUID], BudgetInput]):
             self._db.categories, [bgt.category for bgt in raw_results]
         )
         start_m, end_m = gen_month_range(year, month)
-        transactions = await page_through_query(
-            self._db.transactions,
+        transactions = await self._db.transactions.page_through_query_async(
             [],
             owner=ownerId,
             date=Between(start_m, end_m),

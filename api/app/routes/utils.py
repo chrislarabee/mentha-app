@@ -11,7 +11,7 @@ from app.domain.category import (
     PrimaryCategory,
     Subcategory,
 )
-from app.domain.core import DomainModelT, FilterModel, SortModel
+from app.domain.core import FilterModel
 from app.domain.transaction import Transaction
 from app.storage.db import IsIn, MenthaTable
 
@@ -62,7 +62,7 @@ async def get_categories_by_id(
     kwargs = dict[str, Any]()
     if ids:
         kwargs = {"id": IsIn([id for id in ids])}
-    cat_result = await page_through_query(category_table, [], **kwargs)
+    cat_result = await category_table.page_through_query_async([], **kwargs)
     return {cat.id: cat for cat in [*cat_result, *SYSTEM_CATEGORIES]}
 
 
@@ -95,28 +95,6 @@ def calculate_accumulated_budget(
         if total == base_amt:
             this_month = total
     return this_month, total
-
-
-async def page_through_query(
-    table: MenthaTable[DomainModelT],
-    sorts: list[SortModel] | None = None,
-    **kwargs: Any,
-) -> list[DomainModelT]:
-    page = 1
-    result = list[DomainModelT]()
-    while True:
-        results = await table.query_async(
-            page=page,
-            page_size=100,
-            sorts=sorts or [],
-            **kwargs,
-        )
-        result += results.results
-        if not results.hasNext:
-            break
-        else:
-            page += 1
-    return result
 
 
 def preprocess_filters(filters: list[FilterModel]) -> dict[str, FilterModel]:

@@ -75,9 +75,9 @@ class CategoryRouter(
         return raw_result.transform(_transform)
 
     async def get_all_by_owner_flat(self, ownerId: UUID) -> list[Category]:
-        raw_result = await utils.page_through_query(self._table, owner=ownerId)
+        raw_result = await self._table.page_through_query_async(owner=ownerId)
         return [*raw_result, *SYSTEM_CATEGORIES]
 
     async def get_primary_by_owner(self, ownerId: UUID) -> list[PrimaryCategory]:
-        raw_result = await utils.page_through_query(self._table, owner=ownerId)
+        raw_result = await self._table.page_through_query_async(owner=ownerId)
         return utils.assemble_primary_categories([*raw_result, *SYSTEM_CATEGORIES])

@@ -431,6 +431,48 @@ class MenthaTable(Generic[DomainModelT]):
 
         return self._postprocess_query_result(count, page, page_size, rows)
 
+    def page_through_query(
+        self,
+        sorts: list[SortModel] | None = None,
+        **query_args: QueryOperation | Any,
+    ) -> list[DomainModelT]:
+        page = 1
+        result = list[DomainModelT]()
+        while True:
+            results = self.query(
+                page=page,
+                page_size=100,
+                sorts=sorts or [],
+                **query_args,
+            )
+            result += results.results
+            if not results.hasNext:
+                break
+            else:
+                page += 1
+        return result
+
+    async def page_through_query_async(
+        self,
+        sorts: list[SortModel] | None = None,
+        **query_args: QueryOperation | Any,
+    ) -> list[DomainModelT]:
+        page = 1
+        result = list[DomainModelT]()
+        while True:
+            results = await self.query_async(
+                page=page,
+                page_size=100,
+                sorts=sorts or [],
+                **query_args,
+            )
+            result += results.results
+            if not results.hasNext:
+                break
+            else:
+                page += 1
+        return result
+
     def _generate_count_query(
         self, query_args: dict[str, QueryOperation | Any]
     ) -> Select[Any]:
