@@ -3,6 +3,7 @@
 import CategoryAutocomplete from "@/components/CategoryAutocomplete";
 import CenteredModal from "@/components/CenteredModal";
 import FilterManager from "@/components/FilterManager";
+import Form from "@/components/Form";
 import MenthaTable from "@/components/MenthaTable";
 import { useCategoriesByOwnerFlat } from "@/hooks/categoryHooks";
 import {
@@ -143,7 +144,12 @@ function SplitTransaction({
             variant="outlined"
             startIcon={<Add />}
             onClick={() => {
-              append(generateTransactionInput(total - getSplitTotal()));
+              append(
+                generateTransactionInput(
+                  Math.round((total - getSplitTotal() + Number.EPSILON) * 100) /
+                    100
+                )
+              );
             }}
           >
             Add Split
@@ -189,9 +195,10 @@ export default function TransactionsPage() {
 
   const updateMutation = useUpdateTransaction();
 
-  const { reset, handleSubmit } = useForm({
+  const formReturn = useForm({
     resolver: yupResolver(transactionInputSchema),
   });
+  const { reset } = formReturn;
 
   const resetCatSelect = () => {
     setCatModalOpen(false);
@@ -337,6 +344,10 @@ export default function TransactionsPage() {
     </Stack>
   );
 
+  const submit = async (data: TransactionInput) => {
+    data.category = newCat;
+  };
+
   return (
     <Container component={Paper} sx={{ padding: "20px 0px" }}>
       {categories && splitTransaction && (
@@ -353,31 +364,31 @@ export default function TransactionsPage() {
           }}
         />
       )}
-      <CenteredModal open={catModalOpen} onClose={resetCatSelect}>
+      <CenteredModal
+        open={catModalOpen}
+        onClose={resetCatSelect}
+        heading="Edit Transaction"
+      >
         {categories && (
           <Stack spacing={1}>
-            <CategoryAutocomplete
-              required
-              categories={categories}
-              value={findCatById(newCat, categories)}
-              onChange={(id) => id && setNewCat(id)}
-            />
-            <Stack direction="row" justifyContent="space-evenly">
-              <Button fullWidth onClick={resetCatSelect}>
-                Cancel
-              </Button>
-              <Button
-                variant="contained"
-                fullWidth
-                onClick={handleSubmit(async (data) => {
-                  data.category = newCat;
-                  await updateMutation.mutate(data);
-                  resetCatSelect();
-                })}
-              >
-                Apply
-              </Button>
-            </Stack>
+            <Form
+              mutation={updateMutation}
+              formConfig={formReturn}
+              labels={TransactionLabels}
+              textFields={[{ field: "date", type: "date", required: true }]}
+              onSubmit={submit}
+              onSubmitSuccess={() => {
+                resetCatSelect();
+              }}
+              onCancel={resetCatSelect}
+            >
+              <CategoryAutocomplete
+                required
+                categories={categories}
+                value={findCatById(newCat, categories)}
+                onChange={(id) => id && setNewCat(id)}
+              />
+            </Form>
           </Stack>
         )}
       </CenteredModal>
