@@ -14,6 +14,7 @@ import { Category, UNCATEGORIZED, findCatById } from "@/schemas/category";
 import {
   MenthaQuery,
   QueryFilterParam,
+  round2,
   SYSTEM_USER,
   currencyFormatter,
 } from "@/schemas/shared";
@@ -144,12 +145,7 @@ function SplitTransaction({
             variant="outlined"
             startIcon={<Add />}
             onClick={() => {
-              append(
-                generateTransactionInput(
-                  Math.round((total - getSplitTotal() + Number.EPSILON) * 100) /
-                    100
-                )
-              );
+              append(generateTransactionInput(round2(total - getSplitTotal())));
             }}
           >
             Add Split

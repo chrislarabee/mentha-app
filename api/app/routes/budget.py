@@ -1,17 +1,16 @@
 from datetime import date
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter
 
 from app.domain.budget import (
-    UNALLOCATED_BGT,
-    UNALLOCATED_CATEGORY,
     AllocatedBudget,
     Budget,
     BudgetInput,
+    BudgetReport,
     decode_budget_input_model,
 )
-from app.domain.category import Category
+from app.domain.category import INCOME, UNCATEGORIZED, Category
 from app.domain.core import PagedResultsModel, QueryModel
 from app.routes.router import BasicRouter
 from app.routes.utils import (
@@ -60,15 +59,22 @@ class BudgetRouter(BasicRouter[Budget[UUID], BudgetInput]):
         ownerId: UUID,
         year: int,
         month: int,
-    ) -> list[AllocatedBudget]:
-        results = list[AllocatedBudget]()
+    ) -> BudgetReport:
+        result = BudgetReport()
+        total_income_budget = 0
+        total_expense_budget = 0
+        actual_income = 0
+        actual_expenses = 0
         raw_results = await self._table.page_through_query_async(
             [],
             owner=ownerId,
         )
-        categories = await get_categories_by_id(
-            self._db.categories, [bgt.category for bgt in raw_results]
-        )
+        categories = await get_categories_by_id(self._db.categories)
+        income_cat_ids = [
+            cat.id
+            for cat in categories.values()
+            if cat.id == INCOME.id or cat.parentCategory == INCOME.id
+        ]
         start_m, end_m = gen_month_range(year, month)
         transactions = await self._db.transactions.page_through_query_async(
             [],
@@ -77,27 +83,40 @@ class BudgetRouter(BasicRouter[Budget[UUID], BudgetInput]):
         )
         sum_trans = summarize_transactions_by_category(transactions)
         for bgt in raw_results:
-            results.append(self._transform(bgt, categories, sum_trans, start_m))
+            tf_bgt = self._transform(bgt, categories, sum_trans, start_m)
+            if tf_bgt.category.id in income_cat_ids:
+                total_income_budget += tf_bgt.monthAmt
+                actual_income += tf_bgt.allocatedAmt
+                result.income.append(tf_bgt)
+            else:
+                total_expense_budget += tf_bgt.monthAmt
+                actual_expenses += tf_bgt.allocatedAmt
+                result.budgets.append(tf_bgt)
             if bgt.category in sum_trans:
                 sum_trans.pop(bgt.category)
-        # Any sums remaining in the summarized transactions are returned along
-        # with the unallocated budget:
-        remainder = sum([amt for amt in sum_trans.values()])
-        unallocated_sums = remainder * -1 if remainder < 0 else remainder
-        results.append(
-            AllocatedBudget(
-                id=UNALLOCATED_BGT,
-                category=UNALLOCATED_CATEGORY,
-                amt=0,
-                monthAmt=0,
-                accumulatedAmt=0,
-                allocatedAmt=round(unallocated_sums, 2),
-                period=1,
-                createDate=date(year, month, 1),
-                owner=ownerId,
+        for cat_id, amt in sum_trans.items():
+            actual_expenses += abs(amt)
+            result.other.append(
+                AllocatedBudget(
+                    id=uuid4(),
+                    category=categories.get(cat_id, UNCATEGORIZED),
+                    amt=0,
+                    monthAmt=0,
+                    accumulatedAmt=0,
+                    allocatedAmt=round(abs(amt), 2),
+                    period=1,
+                    createDate=date(year, month, 1),
+                    owner=ownerId,
+                )
             )
-        )
-        return results
+        result.budgetedExpenses = round(total_expense_budget, 2)
+        result.budgetedIncome = round(total_income_budget, 2)
+        result.actualExpenses = round(actual_expenses, 2)
+        result.actualIncome = round(actual_income, 2)
+        result.income.sort(key=lambda bgt: bgt.category.name)
+        result.budgets.sort(key=lambda bgt: bgt.category.name)
+        result.other.sort(key=lambda bgt: bgt.category.name)
+        return result
 
     @staticmethod
     def _transform(
@@ -107,7 +126,7 @@ class BudgetRouter(BasicRouter[Budget[UUID], BudgetInput]):
         to_date: date,
     ) -> AllocatedBudget:
         allocated_amt = summarized_transactions.get(bgt.category, 0)
-        allocated_amt = allocated_amt * -1 if allocated_amt < 0 else allocated_amt
+        allocated_amt = abs(allocated_amt)
         amt, accumulated_amt = calculate_accumulated_budget(
             bgt.amt,
             period=bgt.period,
@@ -120,7 +139,7 @@ class BudgetRouter(BasicRouter[Budget[UUID], BudgetInput]):
             amt=bgt.amt,
             monthAmt=round(amt, 2),
             accumulatedAmt=round(accumulated_amt, 2),
-            allocatedAmt=round(allocated_amt),
+            allocatedAmt=round(allocated_amt, 2),
             period=bgt.period,
             createDate=bgt.createDate,
             inactiveDate=bgt.inactiveDate,

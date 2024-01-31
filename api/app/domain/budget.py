@@ -2,9 +2,10 @@ from datetime import date, datetime
 from typing import Generic, Optional, TypeVar
 from uuid import UUID
 
+from pydantic import BaseModel, Field
+
 from app.domain.category import Category
 from app.domain.core import DomainModel, InputModel
-from app.domain.user import SYSTEM_USER
 
 BUDGET_TABLE = "budgets"
 
@@ -30,6 +31,16 @@ class AllocatedBudget(DomainModel):
     createDate: date
     inactiveDate: Optional[date] = None
     owner: UUID
+
+
+class BudgetReport(BaseModel):
+    income: list[AllocatedBudget] = Field(default_factory=list)
+    budgets: list[AllocatedBudget] = Field(default_factory=list)
+    other: list[AllocatedBudget] = Field(default_factory=list)
+    budgetedIncome: float = Field(default=0)
+    budgetedExpenses: float = Field(default=0)
+    actualIncome: float = Field(default=0)
+    actualExpenses: float = Field(default=0)
 
 
 class BudgetInput(InputModel):
@@ -61,11 +72,3 @@ def decode_budget_input_model(uuid: UUID, input: BudgetInput) -> Budget[UUID]:
         inactiveDate=inactive_date,
         owner=input.owner,
     )
-
-
-UNALLOCATED_BGT = UUID("df9b14f9-829a-4758-bee7-05a380654b91")
-UNALLOCATED_CATEGORY = Category(
-    id=UUID("0d495bad-c52e-49cb-826e-29285153c812"),
-    name="Unallocated",
-    owner=SYSTEM_USER.id,
-)

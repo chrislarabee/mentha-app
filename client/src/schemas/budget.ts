@@ -2,9 +2,6 @@ import * as yup from "yup";
 import { categorySchema } from "./category";
 import { Labels } from "./shared";
 
-export const UNALLOCATED = "df9b14f9-829a-4758-bee7-05a380654b91";
-export const UNALLOCATED_CATEGORY = "0d495bad-c52e-49cb-826e-29285153c812";
-
 export const budgetSchema = yup.object({
   id: yup.string().required(),
   category: yup.string().required(),
@@ -31,11 +28,23 @@ export const allocatedBudgetSchemaList = yup
   .of(allocatedBudgetSchema)
   .required();
 
+export const budgetReport = yup.object({
+  income: yup.array().of(allocatedBudgetSchema).required(),
+  budgets: yup.array().of(allocatedBudgetSchema).required(),
+  other: yup.array().of(allocatedBudgetSchema).required(),
+  budgetedIncome: yup.number().required(),
+  budgetedExpenses: yup.number().required(),
+  actualIncome: yup.number().required(),
+  actualExpenses: yup.number().required(),
+});
+
 export type Budget = yup.InferType<typeof budgetSchema>;
 
 export type AllocatedBudget = yup.InferType<typeof allocatedBudgetSchema>;
 
 export type BudgetInput = yup.InferType<typeof budgetInputSchema>;
+
+export type BudgetReport = yup.InferType<typeof budgetReport>;
 
 export const BudgetInputLabels: Labels<BudgetInput> = {
   id: "ID",

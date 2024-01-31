@@ -100,3 +100,12 @@ export function generateMonthArray(
   }
   return result;
 }
+
+/**
+ * Accurately rounds the submitted # to two decimal places.
+ * @param raw
+ * @returns
+ */
+export function round2(raw: number) {
+  return Math.round((raw + Number.EPSILON) * 100) / 100;
+}

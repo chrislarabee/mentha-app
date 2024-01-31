@@ -1,5 +1,6 @@
 "use client";
 
+import BasicAccordion from "@/components/BasicAccordion";
 import CategoryAutocomplete from "@/components/CategoryAutocomplete";
 import CenteredModal from "@/components/CenteredModal";
 import FloatingActions from "@/components/FloatingActions";
@@ -13,20 +14,20 @@ import {
   AllocatedBudget,
   BudgetInput,
   BudgetInputLabels,
-  UNALLOCATED,
-  UNALLOCATED_CATEGORY,
   budgetInputSchema,
 } from "@/schemas/budget";
 import { INCOME, UNCATEGORIZED, findCatById } from "@/schemas/category";
 import {
+  round2,
   SYSTEM_USER,
   currencyFormatter,
   generateMonthArray,
 } from "@/schemas/shared";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { Add, Delete, Edit } from "@mui/icons-material";
+import { Add, AddCircle, Delete, Edit } from "@mui/icons-material";
 import {
   Box,
+  Button,
   Card,
   Container,
   LinearProgress,
@@ -42,10 +43,12 @@ function BudgetCard({
   budget,
   onEdit,
   onDelete,
+  onCreate,
 }: {
   budget: AllocatedBudget;
   onEdit?: (bgt: AllocatedBudget) => void;
   onDelete?: (bgt: AllocatedBudget) => void;
+  onCreate?: (bgt: AllocatedBudget) => void;
 }) {
   let remainingPct = 0;
   let displayText = "";
@@ -55,8 +58,12 @@ function BudgetCard({
   const formattedAllocation = currencyFormatter.format(budget.allocatedAmt);
 
   if (budget.accumulatedAmt === budget.amt) {
-    remainingPct = budget.allocatedAmt / budget.amt;
-    displayText = `${formattedAllocation} of ${formattedMonthAmt}`;
+    remainingPct = Math.min(budget.allocatedAmt / budget.amt, 1);
+    if (budget.monthAmt === 0) {
+      displayText = formattedAllocation;
+    } else {
+      displayText = `${formattedAllocation} of ${formattedMonthAmt}`;
+    }
   } else {
     displayText =
       `${formattedMonthAmt} set aside this month` +
@@ -79,7 +86,7 @@ function BudgetCard({
       <Box sx={{ width: "100%", padding: "15px" }}>
         <Stack>
           <Typography variant="subtitle1">{budget.category.name}</Typography>
-          {budget.id !== UNALLOCATED && (
+          {budget.monthAmt !== 0 && (
             <Bar variant="determinate" value={remainingPct * 100} />
           )}
           <Stack
@@ -88,22 +95,32 @@ function BudgetCard({
             justifyContent="space-between"
           >
             <Typography>{displayText}</Typography>
-            {budget.id !== UNALLOCATED && (
-              <Stack direction="row">
+            <Stack direction="row">
+              {onDelete && (
                 <SmallIconButton
                   tooltipText="Delete Budget"
-                  onClick={onDelete ? () => onDelete(budget) : undefined}
+                  onClick={() => onDelete(budget)}
                 >
                   <Delete />
                 </SmallIconButton>
+              )}
+              {onEdit && (
                 <SmallIconButton
                   tooltipText="Edit Budget"
-                  onClick={onEdit ? () => onEdit(budget) : undefined}
+                  onClick={() => onEdit(budget)}
                 >
                   <Edit />
                 </SmallIconButton>
-              </Stack>
-            )}
+              )}
+              {onCreate && (
+                <SmallIconButton
+                  tooltipText="Create Monthly Budget for this Category"
+                  onClick={() => onCreate(budget)}
+                >
+                  <AddCircle />
+                </SmallIconButton>
+              )}
+            </Stack>
           </Stack>
         </Stack>
       </Box>
@@ -153,7 +170,7 @@ export default function BudgetsPage() {
   const budgetInputFromAllocatedBudget = (
     bgt: AllocatedBudget,
     inactiveDate?: Date
-  ) => ({
+  ): BudgetInput => ({
     id: bgt.id,
     category: bgt.category.id,
     amt: bgt.amt,
@@ -173,6 +190,13 @@ export default function BudgetsPage() {
   const deleteBudget = (bgt: AllocatedBudget) => {
     const bgtInput = budgetInputFromAllocatedBudget(bgt, new Date());
     updateMutation.mutate(bgtInput);
+  };
+
+  const createBudget = (bgt: AllocatedBudget) => {
+    const data = budgetInputFromAllocatedBudget(bgt);
+    data.amt = bgt.allocatedAmt;
+    data.id = null;
+    updateMutation.mutate(data);
   };
 
   const budgetSelector = oldestTransaction && (
@@ -196,39 +220,21 @@ export default function BudgetsPage() {
     />
   );
 
-  const incomeBudgets =
-    budgets &&
-    budgets.filter(
-      (bgt) =>
-        bgt.category.id === INCOME || bgt.category.parentCategory === INCOME
-    );
+  const netIncome = budgets && {
+    expected: round2(budgets.budgetedIncome - budgets.budgetedExpenses),
+    actual: budgets && round2(budgets.actualIncome - budgets.actualExpenses),
+  };
 
-  const otherBudgets =
-    budgets &&
-    budgets.filter(
-      (bgt) =>
-        ![INCOME, UNALLOCATED_CATEGORY].includes(bgt.category.id) &&
-        bgt.category.parentCategory !== INCOME
-    );
-
-  const unallocatedBudgetCard =
-    budgets &&
-    budgets
-      .filter((bgt) => bgt.id === UNALLOCATED)
-      .map((budget) => <BudgetCard key={budget.id} budget={budget} />);
-
-  const netIncome =
-    budgets &&
-    budgets.reduce((prev, bgt) => {
-      if (
-        bgt.category.id === INCOME ||
-        bgt.category.parentCategory === INCOME
-      ) {
-        return prev + bgt.allocatedAmt;
-      } else {
-        return prev - bgt.allocatedAmt;
-      }
-    }, 0);
+  const NetIncomeDisplay = ({ children }: { children: number }) => (
+    <Box
+      display="inline"
+      sx={{
+        color: children > 0 ? "green" : children < 0 ? "red" : undefined,
+      }}
+    >
+      {currencyFormatter.format(children)}
+    </Box>
+  );
 
   return (
     <Box>
@@ -265,10 +271,6 @@ export default function BudgetsPage() {
                 setFormModalOpen(false);
               }}
             >
-              <Typography>
-                You can backdate the creation date if desired, just be aware
-                that it will affect budget history retroactively.
-              </Typography>
               {categories && (
                 <CategoryAutocomplete
                   categories={categories}
@@ -289,53 +291,73 @@ export default function BudgetsPage() {
                 justifyContent="space-between"
               >
                 {netIncome !== undefined && (
-                  <Typography
-                    variant="h6"
-                    component="div"
-                    sx={{
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Net income this month:{" "}
-                    <Box
-                      display="inline"
+                  <Stack>
+                    <Typography
+                      variant="h6"
+                      component="div"
                       sx={{
-                        color:
-                          netIncome > 0
-                            ? "green"
-                            : netIncome < 0
-                            ? "red"
-                            : undefined,
+                        textTransform: "uppercase",
                       }}
                     >
-                      {currencyFormatter.format(netIncome)}
-                    </Box>
-                  </Typography>
+                      Net income this month
+                    </Typography>
+                    <Stack direction="row" spacing={2}>
+                      <Typography>
+                        Anticipated:{" "}
+                        <NetIncomeDisplay>
+                          {netIncome.expected}
+                        </NetIncomeDisplay>
+                      </Typography>
+                      <Typography>
+                        Actual:{" "}
+                        <NetIncomeDisplay>{netIncome.actual}</NetIncomeDisplay>
+                      </Typography>
+                    </Stack>
+                  </Stack>
                 )}
                 {budgetSelector}
               </Stack>
             </Box>
           </Card>
-          <Typography variant="h5">Income</Typography>
-          {incomeBudgets?.map((budget) => (
-            <BudgetCard
-              key={budget.id}
-              budget={budget}
-              onEdit={edit}
-              onDelete={deleteBudget}
-            />
-          ))}
-          <Typography variant="h5">Budgets</Typography>
-          {otherBudgets?.map((budget) => (
-            <BudgetCard
-              key={budget.id}
-              budget={budget}
-              onEdit={edit}
-              onDelete={deleteBudget}
-            />
-          ))}
-          <Typography variant="h5">Unallocated Transactions</Typography>
-          {unallocatedBudgetCard}
+          <BasicAccordion defaultExpanded heading="Income" noBackground>
+            <Stack>
+              {budgets?.income.map((budget) => (
+                <BudgetCard
+                  key={budget.id}
+                  budget={budget}
+                  onEdit={edit}
+                  onDelete={deleteBudget}
+                />
+              ))}
+            </Stack>
+          </BasicAccordion>
+          <BasicAccordion
+            heading="Budgeted Expenses"
+            defaultExpanded
+            noBackground
+          >
+            <Stack spacing={1}>
+              {budgets?.budgets.map((budget) => (
+                <BudgetCard
+                  key={budget.id}
+                  budget={budget}
+                  onEdit={edit}
+                  onDelete={deleteBudget}
+                />
+              ))}
+            </Stack>
+          </BasicAccordion>
+          <BasicAccordion heading="Other Expenses" defaultExpanded noBackground>
+            <Stack spacing={1}>
+              {budgets?.other.map((budget) => (
+                <BudgetCard
+                  key={budget.id}
+                  budget={budget}
+                  onCreate={createBudget}
+                />
+              ))}
+            </Stack>
+          </BasicAccordion>
         </Stack>
       </Container>
       {categories && (
