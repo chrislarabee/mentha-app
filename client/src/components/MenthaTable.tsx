@@ -40,12 +40,6 @@ interface MenthaTableProps<T> {
   }[];
   onFilter?: () => {};
   children?: ReactNode;
-  justifyChildren?:
-    | "flex-start"
-    | "flex-end"
-    | "center"
-    | "space-between"
-    | "space-evenly";
 }
 
 export default function MenthaTable<T extends Record<string, any>>({
@@ -58,7 +52,6 @@ export default function MenthaTable<T extends Record<string, any>>({
   labels,
   actions,
   children,
-  justifyChildren,
 }: MenthaTableProps<T>) {
   const columnDef: ColumnDefinition<T>[] = columns.map((value) => {
     if (value instanceof Object) {
@@ -111,9 +104,7 @@ export default function MenthaTable<T extends Record<string, any>>({
 
   return (
     <Stack spacing={children ? 2 : 0}>
-      <Stack direction="row" justifyContent={justifyChildren}>
-        {children}
-      </Stack>
+      {children}
       <DataGrid
         loading={isLoading}
         columns={gridColDef}

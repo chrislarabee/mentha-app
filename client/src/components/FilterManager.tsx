@@ -1,3 +1,4 @@
+import { Category } from "@/schemas/category";
 import { FilterOperator, Labels, QueryFilterParam } from "@/schemas/shared";
 import { Add, Close, FilterList } from "@mui/icons-material";
 import {
@@ -7,7 +8,6 @@ import {
   IconButton,
   List,
   ListItem,
-  Popover,
   Stack,
   TextField,
   Tooltip,
@@ -15,9 +15,9 @@ import {
 } from "@mui/material";
 import { useState } from "react";
 import { v4 as uuid4 } from "uuid";
-import MenthaSelect from "./MenthaSelect";
 import CategoryAutocomplete from "./CategoryAutocomplete";
-import { Category } from "@/schemas/category";
+import MenthaPopover, { useMenthaPopoverAnchor } from "./MenthaPopover";
+import MenthaSelect from "./MenthaSelect";
 
 interface FilterInputProps {
   heading: string;
@@ -197,11 +197,9 @@ export default function FilterManager<T>({
 }: AddFilterBtnProps<T>) {
   const [newFilterCol, setNewFilterCol] = useState<FilterConfiguration<T>>();
   const [filterPopoverAnchor, setFilterPopoverAnchor] =
-    useState<HTMLButtonElement | null>(null);
+    useMenthaPopoverAnchor();
 
-  const filterPopoverOpen = Boolean(filterPopoverAnchor);
-
-  const filterPopId = filterPopoverOpen ? "filter-popover" : undefined;
+  const filterPopoverId = "filter-popover";
 
   const handleClose = () => {
     setNewFilterCol(undefined);
@@ -218,7 +216,7 @@ export default function FilterManager<T>({
     }
   );
 
-  const filterColumnOptions = filterPopoverOpen && (
+  const filterColumnOptions = (
     <List dense>
       {filterColOptDef.map((colOpt) => (
         <ListItem key={colOpt.field.toString()}>
@@ -328,18 +326,16 @@ export default function FilterManager<T>({
 
   return (
     <Stack direction="row" alignItems="center">
-      <Popover
-        id={filterPopId}
-        open={filterPopoverOpen}
+      <MenthaPopover
+        id={filterPopoverId}
+        anchor={filterPopoverAnchor}
         onClose={handleClose}
-        anchorEl={filterPopoverAnchor}
-        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
       >
         {newFilterCol ? filterInputs : filterColumnOptions}
-      </Popover>
+      </MenthaPopover>
       <Tooltip title="Add filter">
         <IconButton
-          aria-describedby={filterPopId}
+          aria-describedby={filterPopoverId}
           onClick={(event) => setFilterPopoverAnchor(event.currentTarget)}
         >
           <FilterList />
