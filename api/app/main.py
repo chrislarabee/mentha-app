@@ -9,6 +9,7 @@ from app.routes.category import CategoryRouter
 from app.routes.institution import InstitutionRouter
 from app.routes.rule import RuleRouter
 from app.routes.transaction import TransactionRouter
+from app.routes.trend import TrendRouter
 from app.storage.db import MenthaDB
 
 app = FastAPI(title="Mentha App API")
@@ -40,9 +41,11 @@ app.include_router(category_router.create_fastapi_router(), prefix="/categories"
 institution_router = InstitutionRouter(db.institutions)
 app.include_router(institution_router.create_fastapi_router(), prefix="/institutions")
 
-
 rule_router = RuleRouter(db.rules, db.categories)
 app.include_router(rule_router.create_fastapi_router(), prefix="/rules")
 
 transaction_router = TransactionRouter(db)
 app.include_router(transaction_router.create_fastapi_router(), prefix="/transactions")
+
+trend_router = TrendRouter(db)
+app.include_router(trend_router.create_fastapi_router(), prefix="/trends")

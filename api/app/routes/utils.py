@@ -1,9 +1,10 @@
 import re
 from datetime import date, datetime, timedelta
-from typing import Any, Iterable, cast
+from typing import Any, Iterable, cast, overload
 from uuid import UUID
 
 from dateutil.relativedelta import relativedelta
+from fastapi import Query
 
 from app.domain.category import (
     SYSTEM_CATEGORIES,
@@ -13,7 +14,10 @@ from app.domain.category import (
 )
 from app.domain.core import FilterModel
 from app.domain.transaction import Transaction
+from app.domain.trend import NetIncomeByMonth
 from app.storage.db import IsIn, MenthaTable
+
+DateQueryParam = Query(description="Date in YYYY-MM-DD format.")
 
 
 def assemble_primary_categories(raw: list[Category]) -> list[PrimaryCategory]:
@@ -97,6 +101,17 @@ def calculate_accumulated_budget(
     return this_month, total
 
 
+@overload
+def date_to_datetime(dt: date) -> datetime: ...
+@overload
+def date_to_datetime(dt: None) -> None: ...
+
+
+def date_to_datetime(dt: date | None) -> datetime | None:
+    if dt:
+        return datetime(dt.year, dt.month, dt.day)
+
+
 def preprocess_filters(filters: list[FilterModel]) -> dict[str, FilterModel]:
     result = dict[str, FilterModel]()
     for f in filters:
@@ -122,7 +137,7 @@ def preprocess_filters(filters: list[FilterModel]) -> dict[str, FilterModel]:
 
 
 def summarize_transactions_by_category(
-    transactions: list[Transaction[Any]],
+    transactions: Iterable[Transaction[Any]],
 ) -> dict[UUID, float]:
     groups = dict[UUID, list[Transaction[Any]]]()
     for tran in transactions:
@@ -134,3 +149,26 @@ def summarize_transactions_by_category(
             groups[cat_id] = []
         groups[cat_id].append(tran)
     return {k: sum([tran.amt for tran in v]) for k, v in groups.items()}
+
+
+def summarize_transactions_by_month(
+    transactions: Iterable[Transaction[Any]],
+) -> list[NetIncomeByMonth]:
+    groups = dict[datetime, list[Transaction[Any]]]()
+    result = list[NetIncomeByMonth]()
+    for tran in transactions:
+        month = datetime(tran.date.year, tran.date.month, 1)
+        if month not in groups:
+            groups[month] = []
+        groups[month].append(tran)
+    for month, trans in groups.items():
+        result.append(
+            NetIncomeByMonth(
+                date=month,
+                income=round(sum([tran.amt for tran in trans if tran.amt >= 0]), 2),
+                expense=round(sum([tran.amt for tran in trans if tran.amt < 0]), 2),
+                net=round(sum([tran.amt for tran in trans]), 2),
+            )
+        )
+    result.sort(key=lambda nibm: nibm.date)
+    return result

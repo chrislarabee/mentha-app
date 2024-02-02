@@ -3,6 +3,7 @@ from uuid import UUID, uuid4
 from app.domain.category import Category, PrimaryCategory, Subcategory
 from app.domain.core import FilterModel
 from app.domain.transaction import Transaction
+from app.domain.trend import NetIncomeByMonth
 from app.domain.user import SYSTEM_USER
 from app.routes import utils
 
@@ -144,3 +145,37 @@ def test_summarize_transactions_by_category():
             _gen_test_tran(-31.08, cat_c),
         ]
     ) == {cat_a: -1369.17, cat_b: 1552.00, cat_c: -98.62}
+
+
+def test_summarize_transactions_by_month():
+    def _gen_test_tran(amt: float, date: date) -> Transaction[UUID]:
+        return Transaction(
+            id=uuid4(),
+            fitId="test",
+            amt=amt,
+            date=date,
+            category=uuid4(),
+            name="foo",
+            account=uuid4(),
+            owner=uuid4(),
+        )
+
+    assert utils.summarize_transactions_by_month(
+        [
+            _gen_test_tran(123.45, date(2024, 1, 23)),
+            _gen_test_tran(400, date(2024, 2, 29)),
+            _gen_test_tran(-320.06, date(2024, 2, 13)),
+            _gen_test_tran(-10.11, date(2023, 12, 6)),
+            _gen_test_tran(-82.28, date(2023, 12, 19)),
+        ]
+    ) == [
+        NetIncomeByMonth(
+            date=datetime(2023, 12, 1), income=0, expense=-92.39, net=-92.39
+        ),
+        NetIncomeByMonth(
+            date=datetime(2024, 1, 1), income=123.45, expense=0, net=123.45
+        ),
+        NetIncomeByMonth(
+            date=datetime(2024, 2, 1), income=400, expense=-320.06, net=79.94
+        ),
+    ]
