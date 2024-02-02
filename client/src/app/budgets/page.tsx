@@ -5,29 +5,27 @@ import CategoryAutocomplete from "@/components/CategoryAutocomplete";
 import CenteredModal from "@/components/CenteredModal";
 import FloatingActions from "@/components/FloatingActions";
 import Form from "@/components/Form";
-import MenthaSelect from "@/components/MenthaSelect";
 import { SmallIconButton } from "@/components/buttons";
 import { useBudgetsByOwner, useUpdateBudget } from "@/hooks/budgetHooks";
 import { useCategoriesByOwnerFlat } from "@/hooks/categoryHooks";
-import { useOldestTransaction } from "@/hooks/transactionHooks";
 import {
   AllocatedBudget,
   BudgetInput,
   BudgetInputLabels,
   budgetInputSchema,
 } from "@/schemas/budget";
-import { INCOME, UNCATEGORIZED, findCatById } from "@/schemas/category";
-import {
-  round2,
-  SYSTEM_USER,
-  currencyFormatter,
-  generateMonthArray,
-} from "@/schemas/shared";
+import { UNCATEGORIZED, findCatById } from "@/schemas/category";
+import { SYSTEM_USER, currencyFormatter, round2 } from "@/schemas/shared";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { Add, AddCircle, Delete, Edit } from "@mui/icons-material";
+import {
+  Add,
+  AddCircle,
+  Delete,
+  Edit,
+  VerticalAlignCenter,
+} from "@mui/icons-material";
 import {
   Box,
-  Button,
   Card,
   Container,
   LinearProgress,
@@ -44,11 +42,13 @@ function BudgetCard({
   onEdit,
   onDelete,
   onCreate,
+  onResetAmt,
 }: {
   budget: AllocatedBudget;
   onEdit?: (bgt: AllocatedBudget) => void;
   onDelete?: (bgt: AllocatedBudget) => void;
   onCreate?: (bgt: AllocatedBudget) => void;
+  onResetAmt?: (bgt: AllocatedBudget) => void;
 }) {
   let remainingPct = 0;
   let displayText = "";
@@ -104,6 +104,14 @@ function BudgetCard({
                   <Delete />
                 </SmallIconButton>
               )}
+              {onResetAmt && budget.period === 1 && (
+                <SmallIconButton
+                  tooltipText="Set Amt to Current Allocation"
+                  onClick={() => onResetAmt(budget)}
+                >
+                  <VerticalAlignCenter />
+                </SmallIconButton>
+              )}
               {onEdit && (
                 <SmallIconButton
                   tooltipText="Edit Budget"
@@ -129,10 +137,7 @@ function BudgetCard({
 }
 
 export default function BudgetsPage() {
-  // Will show up to a year of budget history:
-  const monthArray = generateMonthArray(new Date(), -12, "desc");
-
-  const [budgetDate, setBudgetDate] = useState(monthArray[0]);
+  const budgetDate = new Date();
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [resultCat, setResultCat] = useState<string>(UNCATEGORIZED);
   const [modalHeading, setModalHeading] = useState("Add New Budget");
@@ -143,7 +148,6 @@ export default function BudgetsPage() {
     budgetDate.getMonth() + 1
   );
   const { data: categories } = useCategoriesByOwnerFlat(SYSTEM_USER);
-  const { data: oldestTransaction } = useOldestTransaction(SYSTEM_USER);
 
   const updateMutation = useUpdateBudget();
 
@@ -199,26 +203,11 @@ export default function BudgetsPage() {
     updateMutation.mutate(data);
   };
 
-  const budgetSelector = oldestTransaction && (
-    <MenthaSelect
-      // Budget months from before transactions were logged for this user are
-      // not available in the select:
-      options={monthArray.filter(
-        (value) =>
-          value >=
-          new Date(
-            oldestTransaction.date.getFullYear(),
-            oldestTransaction.date.getMonth(),
-            1
-          )
-      )}
-      optConverter={(opt) => `${opt.getFullYear()}-${opt.getMonth() + 1}`}
-      label="Budget Month-Year"
-      value={budgetDate}
-      comparator={(a: Date, b?: Date) => a.toISOString() === b?.toISOString()}
-      onChange={setBudgetDate}
-    />
-  );
+  const resetFloor = (bgt: AllocatedBudget) => {
+    const data = budgetInputFromAllocatedBudget(bgt);
+    data.amt = bgt.allocatedAmt;
+    updateMutation.mutate(data);
+  };
 
   const netIncome = budgets && {
     expected: round2(budgets.budgetedIncome - budgets.budgetedExpenses),
@@ -315,7 +304,9 @@ export default function BudgetsPage() {
                     </Stack>
                   </Stack>
                 )}
-                {budgetSelector}
+                <Typography variant="h6">
+                  {budgetDate.getMonth() + 1} / {budgetDate.getFullYear()}
+                </Typography>
               </Stack>
             </Box>
           </Card>
@@ -327,6 +318,7 @@ export default function BudgetsPage() {
                   budget={budget}
                   onEdit={edit}
                   onDelete={deleteBudget}
+                  onResetAmt={resetFloor}
                 />
               ))}
             </Stack>
@@ -343,6 +335,7 @@ export default function BudgetsPage() {
                   budget={budget}
                   onEdit={edit}
                   onDelete={deleteBudget}
+                  onResetAmt={resetFloor}
                 />
               ))}
             </Stack>
