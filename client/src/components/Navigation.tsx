@@ -139,7 +139,7 @@ export default function Navigation({
     {
       icon: <InsertChart />,
       label: "Trends",
-      url: "/",
+      url: "/trends",
     },
     {
       icon: <AccountBalance />,

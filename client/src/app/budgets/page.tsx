@@ -15,7 +15,12 @@ import {
   budgetInputSchema,
 } from "@/schemas/budget";
 import { UNCATEGORIZED, findCatById } from "@/schemas/category";
-import { SYSTEM_USER, currencyFormatter, round2 } from "@/schemas/shared";
+import {
+  SYSTEM_USER,
+  currencyFormatter,
+  dateToMonthSlashYear,
+  round2,
+} from "@/schemas/shared";
 import { yupResolver } from "@hookform/resolvers/yup";
 import {
   Add,
@@ -305,7 +310,7 @@ export default function BudgetsPage() {
                   </Stack>
                 )}
                 <Typography variant="h6">
-                  {budgetDate.getMonth() + 1} / {budgetDate.getFullYear()}
+                  {dateToMonthSlashYear(budgetDate)}
                 </Typography>
               </Stack>
             </Box>

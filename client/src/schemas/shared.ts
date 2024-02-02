@@ -109,3 +109,20 @@ export function generateMonthArray(
 export function round2(raw: number) {
   return Math.round((raw + Number.EPSILON) * 100) / 100;
 }
+
+export function dateToTimelessISOString(date: Date | string): string;
+export function dateToTimelessISOString(date: Date | undefined): undefined;
+export function dateToTimelessISOString(date: string | undefined): undefined;
+export function dateToTimelessISOString(
+  date: Date | string | undefined
+): string | undefined {
+  if (date) {
+    const rawDate = typeof date === "string" ? new Date(date) : date;
+    return rawDate.toISOString().split("T")[0];
+  }
+}
+
+export function dateToMonthSlashYear(date: Date | string) {
+  const rawDate = typeof date === "string" ? new Date(date) : date;
+  return `${rawDate.getMonth() + 1} / ${rawDate.getFullYear()}`;
+}
