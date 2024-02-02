@@ -4,9 +4,13 @@ import CategoryAutocomplete from "@/components/CategoryAutocomplete";
 import CenteredModal from "@/components/CenteredModal";
 import FilterManager from "@/components/FilterManager";
 import Form from "@/components/Form";
+import MenthaPopover, {
+  useMenthaPopoverAnchor,
+} from "@/components/MenthaPopover";
 import MenthaTable from "@/components/MenthaTable";
 import { useCategoriesByOwnerFlat } from "@/hooks/categoryHooks";
 import {
+  useImportTransactions,
   useTransactionsByOwner,
   useUpdateTransaction,
 } from "@/hooks/transactionHooks";
@@ -26,15 +30,18 @@ import {
   transactionInputSchemas,
 } from "@/schemas/transaction";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { Add, AltRoute, Close, Edit } from "@mui/icons-material";
+import { Add, AltRoute, Close, Edit, MoreVert } from "@mui/icons-material";
 import {
+  Box,
   Button,
   CircularProgress,
   Container,
   IconButton,
   Paper,
+  Snackbar,
   Stack,
   TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import { useState } from "react";
@@ -174,6 +181,9 @@ export default function TransactionsPage() {
   });
   const [catModalOpen, setCatModalOpen] = useState(false);
   const [splitModalOpen, setSplitModalOpen] = useState(false);
+  const [actionsAnchor, setActionsAnchor] = useMenthaPopoverAnchor();
+  const [toastOpen, setToastOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string>();
   const [newCat, setNewCat] = useState<string>(UNCATEGORIZED);
   const [splitTransaction, setSplitTransaction] = useState<Transaction>();
   const [paginationModel, setPaginationModel] = useState({
@@ -190,6 +200,15 @@ export default function TransactionsPage() {
   const { data: categories } = useCategoriesByOwnerFlat(SYSTEM_USER);
 
   const updateMutation = useUpdateTransaction();
+  const importMutation = useImportTransactions((result) => {
+    setToastMessage(result);
+    setToastOpen(true);
+  });
+
+  const actionsPopoverId = "actions-popover";
+  const handleActionsClose = () => {
+    setActionsAnchor(null);
+  };
 
   const formReturn = useForm({
     resolver: yupResolver(transactionInputSchema),
@@ -221,7 +240,6 @@ export default function TransactionsPage() {
       labels={TransactionLabels}
       rows={transactions.results}
       totalRows={transactions.totalHitCount}
-      justifyChildren="space-between"
       columns={[
         {
           field: "date",
@@ -280,57 +298,68 @@ export default function TransactionsPage() {
         },
       ]}
     >
-      <FilterManager
-        columnOptions={[
-          "name",
-          { field: "amt", type: "number" },
-          { field: "date", type: "date" },
-          {
-            field: "category",
-            type: "category",
-            renderFilterTerm: (term) => {
-              const result = categories.find((cat) => cat.id === term);
-              return result?.name || term;
-            },
-          },
-        ]}
-        categories={categories}
-        optionLabels={TransactionLabels}
-        filters={filters}
-        setFilters={(filters) => {
-          setFilters(filters);
-          setQuery((prev) => ({
-            sorts: prev.sorts,
-            filters: Object.values(filters),
-          }));
-        }}
-      />
-      <Button
-        variant="outlined"
-        disabled={
-          Object.values(filters).find(
-            (value) =>
-              value.field === "category" && value.term === UNCATEGORIZED
-          ) !== undefined
-        }
-        onClick={() => {
-          let newFilters: Record<string, QueryFilterParam> = {
-            ...filters,
-            [uuid4()]: {
+      <Stack direction="row" justifyContent="space-between">
+        <FilterManager
+          columnOptions={[
+            "name",
+            { field: "amt", type: "number" },
+            { field: "date", type: "date" },
+            {
               field: "category",
-              op: "=",
-              term: UNCATEGORIZED,
+              type: "category",
+              renderFilterTerm: (term) => {
+                const result = categories.find((cat) => cat.id === term);
+                return result?.name || term;
+              },
             },
-          };
-          setFilters(newFilters);
-          setQuery((prev) => ({
-            sorts: prev.sorts,
-            filters: Object.values(newFilters),
-          }));
-        }}
-      >
-        Uncategorized Only
-      </Button>
+          ]}
+          categories={categories}
+          optionLabels={TransactionLabels}
+          filters={filters}
+          setFilters={(filters) => {
+            setFilters(filters);
+            setQuery((prev) => ({
+              sorts: prev.sorts,
+              filters: Object.values(filters),
+            }));
+          }}
+        />
+        <Stack direction="row">
+          <Button
+            variant="outlined"
+            disabled={
+              Object.values(filters).find(
+                (value) =>
+                  value.field === "category" && value.term === UNCATEGORIZED
+              ) !== undefined
+            }
+            onClick={() => {
+              let newFilters: Record<string, QueryFilterParam> = {
+                ...filters,
+                [uuid4()]: {
+                  field: "category",
+                  op: "=",
+                  term: UNCATEGORIZED,
+                },
+              };
+              setFilters(newFilters);
+              setQuery((prev) => ({
+                sorts: prev.sorts,
+                filters: Object.values(newFilters),
+              }));
+            }}
+          >
+            Uncategorized Only
+          </Button>
+          <Tooltip title="Other Actions">
+            <IconButton
+              onClick={(event) => setActionsAnchor(event.currentTarget)}
+            >
+              <MoreVert />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      </Stack>
     </MenthaTable>
   );
 
@@ -360,6 +389,33 @@ export default function TransactionsPage() {
           }}
         />
       )}
+      <MenthaPopover
+        id={actionsPopoverId}
+        anchor={actionsAnchor}
+        onClose={handleActionsClose}
+        horizontalOffset="right"
+      >
+        <Box sx={{ padding: 2 }}>
+          <Button
+            variant="outlined"
+            fullWidth
+            onClick={() => {
+              importMutation.mutate(SYSTEM_USER);
+            }}
+          >
+            Import
+          </Button>
+        </Box>
+      </MenthaPopover>
+      <Snackbar
+        message={toastMessage}
+        open={toastOpen}
+        onClose={() => {
+          setToastOpen(false);
+          setToastMessage(undefined);
+        }}
+        autoHideDuration={3000}
+      />
       <CenteredModal
         open={catModalOpen}
         onClose={resetCatSelect}

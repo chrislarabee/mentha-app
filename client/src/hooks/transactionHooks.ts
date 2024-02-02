@@ -82,3 +82,21 @@ export function useApplyRules(onSuccess?: () => void) {
     },
   });
 }
+
+export function useImportTransactions(onSuccess?: (result: string) => void) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (ownerId: string) => {
+      const resp = await axiosInstance.post(
+        `${baseEndpoint}/import/${ownerId}`
+      );
+      return resp.data as string;
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: [queryKey] });
+      if (onSuccess) {
+        onSuccess(result);
+      }
+    },
+  });
+}
