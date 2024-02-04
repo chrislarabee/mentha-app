@@ -3,7 +3,7 @@ from uuid import UUID, uuid4
 from app.domain.category import Category, PrimaryCategory, Subcategory
 from app.domain.core import FilterModel
 from app.domain.transaction import Transaction
-from app.domain.trend import NetIncomeByMonth
+from app.domain.trend import CategorySpendingByMonth, NetIncomeByMonth
 from app.domain.user import SYSTEM_USER
 from app.routes import utils
 
@@ -100,6 +100,55 @@ def test_calculate_accumulated_budget():
     ) == (40, 40)
 
 
+def test_date_to_datetime():
+    assert utils.date_to_datetime(date(2023, 12, 3)) == datetime(2023, 12, 3)
+    assert utils.date_to_datetime(date(2023, 12, 3), True) == datetime(
+        2023, 12, 3, 23, 59, 59, 999999
+    )
+    assert utils.date_to_datetime(date(2023, 11, 30)) == datetime(2023, 11, 30)
+    assert utils.date_to_datetime(date(2023, 11, 30), True) == datetime(
+        2023, 11, 30, 23, 59, 59, 999999
+    )
+    assert utils.date_to_datetime(date(2023, 12, 31)) == datetime(2023, 12, 31)
+    assert utils.date_to_datetime(date(2023, 12, 31), True) == datetime(
+        2023, 12, 31, 23, 59, 59, 999999
+    )
+    assert utils.date_to_datetime(None) is None
+
+
+def test_gen_dt_range():
+    current = datetime.now()
+    _, end_m = utils.gen_month_range(current.year, current.month)
+    assert utils.gen_dt_range() == (
+        datetime(current.year, current.month, 1),
+        datetime(current.year, current.month, end_m.day, 23, 59, 59, 999999),
+    )
+    assert utils.gen_dt_range(date(2023, 10, 1)) == (
+        datetime(2023, 10, 1),
+        datetime(2023, 10, 31, 23, 59, 59, 999999),
+    )
+    assert utils.gen_dt_range(end_dt=date(2023, 10, 31)) == (
+        datetime(2023, 10, 1),
+        datetime(2023, 10, 31, 23, 59, 59, 999999),
+    )
+
+
+def test_gen_month_list():
+    assert utils.gen_month_list(date(2023, 1, 1), date(2023, 5, 1)) == (
+        datetime(2023, 1, 1),
+        datetime(2023, 2, 1),
+        datetime(2023, 3, 1),
+        datetime(2023, 4, 1),
+        datetime(2023, 5, 1),
+    )
+
+
+def test_get_next_month():
+    assert utils.get_next_month(datetime(2023, 12, 4, 12, 13, 39)) == datetime(
+        2024, 1, 1
+    )
+
+
 def test_preprocess_filters():
     raw = [
         FilterModel(field="foo", op="=", term="prueba"),
@@ -148,26 +197,30 @@ def test_summarize_transactions_by_category():
 
 
 def test_summarize_transactions_by_month():
+    cat_id = uuid4()
+
     def _gen_test_tran(amt: float, date: date) -> Transaction[UUID]:
         return Transaction(
             id=uuid4(),
             fitId="test",
             amt=amt,
             date=date,
-            category=uuid4(),
+            category=cat_id,
             name="foo",
             account=uuid4(),
             owner=uuid4(),
         )
 
+    transactions = [
+        _gen_test_tran(123.45, date(2024, 1, 23)),
+        _gen_test_tran(400, date(2024, 2, 29)),
+        _gen_test_tran(-320.06, date(2024, 2, 13)),
+        _gen_test_tran(-10.11, date(2023, 12, 6)),
+        _gen_test_tran(-82.28, date(2023, 12, 19)),
+    ]
+
     assert utils.summarize_transactions_by_month(
-        [
-            _gen_test_tran(123.45, date(2024, 1, 23)),
-            _gen_test_tran(400, date(2024, 2, 29)),
-            _gen_test_tran(-320.06, date(2024, 2, 13)),
-            _gen_test_tran(-10.11, date(2023, 12, 6)),
-            _gen_test_tran(-82.28, date(2023, 12, 19)),
-        ]
+        transactions, utils.summarizer_net_income
     ) == [
         NetIncomeByMonth(
             date=datetime(2023, 12, 1), income=0, expense=-92.39, net=-92.39
@@ -177,5 +230,23 @@ def test_summarize_transactions_by_month():
         ),
         NetIncomeByMonth(
             date=datetime(2024, 2, 1), income=400, expense=-320.06, net=79.94
+        ),
+    ]
+
+    assert utils.summarize_transactions_by_month(
+        transactions, utils.summarizer_category_spending
+    ) == [
+        CategorySpendingByMonth(
+            date=datetime(2023, 12, 1), category=cat_id, amt=-92.39
+        ),
+        CategorySpendingByMonth(
+            date=datetime(2024, 1, 1),
+            category=cat_id,
+            amt=123.45,
+        ),
+        CategorySpendingByMonth(
+            date=datetime(2024, 2, 1),
+            category=cat_id,
+            amt=79.94,
         ),
     ]
