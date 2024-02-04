@@ -11,9 +11,10 @@ interface CategoryAutocompleteProps {
   categories: Category[];
   required?: boolean;
   value?: Category | string;
-  onChange?: (id: string | null) => void;
+  onChange?: (id: string | null | undefined) => void;
   error?: boolean;
   errorText?: string;
+  size?: "small" | "medium";
 }
 
 export default function CategoryAutocomplete({
@@ -23,6 +24,7 @@ export default function CategoryAutocomplete({
   onChange,
   error,
   errorText,
+  size,
 }: CategoryAutocompleteProps) {
   const tfCatToOpt = (cat: Category) => ({
     id: cat.id,
@@ -32,11 +34,16 @@ export default function CategoryAutocomplete({
   const getValue = (v?: Category | string) => {
     if (v instanceof Object || v === undefined) {
       return v;
+    } else if (v === "") {
+      return undefined;
     } else {
       return categories.find((cat) => cat.id === v);
     }
   };
 
+  // TODO: Somewhere in here there's still an annoying warning thrown by MUI
+  // re: the controlled/uncontrolled switching. Find a way to resolve that
+  // permanently.
   return (
     <MenthaAutocomplete
       options={sortCategories(categories, "first")}
@@ -50,6 +57,7 @@ export default function CategoryAutocomplete({
       error={error}
       errorText={errorText}
       minWidth={200}
+      size={size}
     />
   );
 }

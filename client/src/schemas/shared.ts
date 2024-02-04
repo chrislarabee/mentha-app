@@ -126,3 +126,7 @@ export function dateToMonthSlashYear(date: Date | string) {
   const rawDate = typeof date === "string" ? new Date(date) : date;
   return `${rawDate.getMonth() + 1} / ${rawDate.getFullYear()}`;
 }
+
+export function sum(values: number[]) {
+  return values.reduce((prev, current) => prev + Number(current), 0);
+}

@@ -23,7 +23,7 @@ interface MenthaSelectProps<T> {
  * inflexibility in what options it will accept and how it then handles those
  * options.
  * @param options An array of any objects.
- * @param optConverter Rendering function to apply to each option.
+ * @param optConverter Rendering function to apply to each option before displaying it.
  * @param label Label for the Select field.
  * @param value Optional currently selected value.
  * @param onChange Function to call when the user changes the value.

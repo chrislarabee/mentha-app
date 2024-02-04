@@ -1,5 +1,8 @@
 import { dateToTimelessISOString } from "@/schemas/shared";
-import { netIncomeByDateSchemaList } from "@/schemas/trend";
+import {
+  categorySpendingByMonthSchemaList,
+  netIncomeByMonthSchemaList,
+} from "@/schemas/trend";
 import { useQuery } from "@tanstack/react-query";
 import { axiosInstance } from "./endpoints";
 
@@ -12,7 +15,7 @@ export function useNetIncomeByOwner(
   endDt?: Date
 ) {
   return useQuery({
-    queryKey: [queryKey, "by-owner", startDt, endDt],
+    queryKey: [queryKey, "by-owner", "net-income", startDt, endDt],
     queryFn: async () => {
       const resp = await axiosInstance.get(
         `/${baseEndpoint}/net-income/${ownerId}`,
@@ -23,7 +26,41 @@ export function useNetIncomeByOwner(
           },
         }
       );
-      const results = await netIncomeByDateSchemaList.validate(resp.data);
+      const results = await netIncomeByMonthSchemaList.validate(resp.data);
+      return results;
+    },
+  });
+}
+
+export function useCategorySpendingByOwner(
+  ownerId: string,
+  categoryId: string,
+  startDt?: Date,
+  endDt?: Date
+) {
+  return useQuery({
+    queryKey: [
+      queryKey,
+      "by-owner",
+      "category-spending",
+      categoryId,
+      startDt,
+      endDt,
+    ],
+    queryFn: async () => {
+      const resp = await axiosInstance.get(
+        `/${baseEndpoint}/category-spend/${ownerId}`,
+        {
+          params: {
+            category: categoryId,
+            startDt: dateToTimelessISOString(startDt),
+            endDt: dateToTimelessISOString(endDt),
+          },
+        }
+      );
+      const results = await categorySpendingByMonthSchemaList.validate(
+        resp.data
+      );
       return results;
     },
   });

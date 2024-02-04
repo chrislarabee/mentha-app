@@ -21,6 +21,7 @@ import {
   round2,
   SYSTEM_USER,
   currencyFormatter,
+  sum,
 } from "@/schemas/shared";
 import {
   Transaction,
@@ -85,8 +86,7 @@ function SplitTransaction({
   });
   const transactions = useWatch({ control, name: "inputs" });
 
-  const getSplitTotal = () =>
-    transactions.reduce((prev, current) => prev + Number(current.amt), 0);
+  const getSplitTotal = () => sum(transactions.map((t) => t.amt));
 
   const generateTransactionInput = (
     amt: number,

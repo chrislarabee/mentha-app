@@ -21,6 +21,7 @@ interface MenthaAutocompleteProps<T> {
   error?: boolean;
   errorText?: string;
   minWidth?: number;
+  size?: "small" | "medium";
 }
 
 export default function MenthaAutocomplete<T>({
@@ -33,7 +34,11 @@ export default function MenthaAutocomplete<T>({
   error,
   errorText,
   minWidth,
+  size,
 }: MenthaAutocompleteProps<T>) {
+  // TODO: Somewhere in here there's still an annoying warning thrown by MUI
+  // re: the controlled/uncontrolled switching. Find a way to resolve that
+  // permanently.
   return (
     <Autocomplete
       aria-required={required}
@@ -50,6 +55,7 @@ export default function MenthaAutocomplete<T>({
           required={required}
           error={error}
           helperText={errorText}
+          size={size}
         />
       )}
     />
