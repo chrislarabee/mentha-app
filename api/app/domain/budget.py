@@ -41,6 +41,7 @@ class BudgetReport(BaseModel):
     budgetedExpenses: float = Field(default=0)
     actualIncome: float = Field(default=0)
     actualExpenses: float = Field(default=0)
+    anticipatedNet: float = Field(default=0)
 
 
 class BudgetInput(InputModel):
@@ -72,3 +73,13 @@ def decode_budget_input_model(uuid: UUID, input: BudgetInput) -> Budget[UUID]:
         inactiveDate=inactive_date,
         owner=input.owner,
     )
+
+
+def get_anticipated_net_val(budget: AllocatedBudget) -> float:
+    if budget.period > 1:
+        result = budget.monthAmt
+        if budget.allocatedAmt > budget.amt:
+            return result + (budget.allocatedAmt - budget.amt)
+        return result
+    else:
+        return max(budget.allocatedAmt, budget.monthAmt)

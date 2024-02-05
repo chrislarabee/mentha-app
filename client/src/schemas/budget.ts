@@ -36,6 +36,7 @@ export const budgetReport = yup.object({
   budgetedExpenses: yup.number().required(),
   actualIncome: yup.number().required(),
   actualExpenses: yup.number().required(),
+  anticipatedNet: yup.number().required(),
 });
 
 export type Budget = yup.InferType<typeof budgetSchema>;

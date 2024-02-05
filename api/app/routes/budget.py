@@ -9,6 +9,7 @@ from app.domain.budget import (
     BudgetInput,
     BudgetReport,
     decode_budget_input_model,
+    get_anticipated_net_val,
 )
 from app.domain.category import INCOME, UNCATEGORIZED, Category
 from app.domain.core import PagedResultsModel, QueryModel
@@ -65,6 +66,7 @@ class BudgetRouter(BasicRouter[Budget[UUID], BudgetInput]):
         total_expense_budget = 0
         actual_income = 0
         actual_expenses = 0
+        anticipated_net = 0
         raw_results = await self._table.page_through_query_async(
             [],
             owner=ownerId,
@@ -87,15 +89,18 @@ class BudgetRouter(BasicRouter[Budget[UUID], BudgetInput]):
             if tf_bgt.category.id in income_cat_ids:
                 total_income_budget += tf_bgt.monthAmt
                 actual_income += tf_bgt.allocatedAmt
+                anticipated_net += get_anticipated_net_val(tf_bgt)
                 result.income.append(tf_bgt)
             else:
                 total_expense_budget += tf_bgt.monthAmt
                 actual_expenses += tf_bgt.allocatedAmt
+                anticipated_net -= get_anticipated_net_val(tf_bgt)
                 result.budgets.append(tf_bgt)
             if bgt.category in sum_trans:
                 sum_trans.pop(bgt.category)
         for cat_id, amt in sum_trans.items():
             actual_expenses += abs(amt)
+            anticipated_net += amt
             result.other.append(
                 AllocatedBudget(
                     id=uuid4(),
@@ -113,6 +118,7 @@ class BudgetRouter(BasicRouter[Budget[UUID], BudgetInput]):
         result.budgetedIncome = round(total_income_budget, 2)
         result.actualExpenses = round(actual_expenses, 2)
         result.actualIncome = round(actual_income, 2)
+        result.anticipatedNet = round(anticipated_net, 2)
         result.income.sort(key=lambda bgt: bgt.category.name)
         result.budgets.sort(key=lambda bgt: bgt.category.name)
         result.other.sort(key=lambda bgt: bgt.category.name)

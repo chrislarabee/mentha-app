@@ -215,9 +215,6 @@ export default function BudgetsPage() {
     updateMutation.mutate(data);
   };
 
-  const netIncome =
-    budgets && round2(budgets.budgetedIncome - budgets.budgetedExpenses);
-
   const NetIncomeDisplay = ({ children }: { children: number }) => (
     <Box
       display="inline"
@@ -283,7 +280,7 @@ export default function BudgetsPage() {
                 alignItems="center"
                 justifyContent="space-between"
               >
-                {netIncome !== undefined && (
+                {budgets && (
                   <Stack>
                     <Typography
                       variant="h6"
@@ -297,7 +294,9 @@ export default function BudgetsPage() {
                     <Stack direction="row" spacing={2}>
                       <Typography>
                         Anticipated:{" "}
-                        <NetIncomeDisplay>{netIncome}</NetIncomeDisplay>
+                        <NetIncomeDisplay>
+                          {budgets.anticipatedNet}
+                        </NetIncomeDisplay>
                       </Typography>
                     </Stack>
                   </Stack>
