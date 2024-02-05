@@ -55,7 +55,7 @@ function BudgetCard({
   onCreate?: (bgt: AllocatedBudget) => void;
   onResetAmt?: (bgt: AllocatedBudget) => void;
 }) {
-  let remainingPct = 0;
+  let pctUsed = 0;
   let displayText = "";
   const formattedAmt = currencyFormatter.format(budget.amt);
   const formattedMonthAmt = currencyFormatter.format(budget.monthAmt);
@@ -63,7 +63,7 @@ function BudgetCard({
   const formattedAllocation = currencyFormatter.format(budget.allocatedAmt);
 
   if (budget.accumulatedAmt === budget.amt) {
-    remainingPct = Math.min(budget.allocatedAmt / budget.amt, 1);
+    pctUsed = budget.allocatedAmt / budget.amt;
     if (budget.monthAmt === 0) {
       displayText = formattedAllocation;
     } else {
@@ -71,9 +71,9 @@ function BudgetCard({
     }
   } else {
     displayText =
-      `${formattedMonthAmt} set aside this month` +
+      `${formattedMonthAmt} this month` +
       " \u25CF " +
-      `${formattedAccumulation} set aside to date of ${formattedAmt} total`;
+      `${formattedAccumulation} to date of ${formattedAmt} total`;
   }
 
   const Bar = styled(LinearProgress)(() => ({
@@ -82,7 +82,8 @@ function BudgetCard({
     },
     [`& .${linearProgressClasses.bar}`]: {
       borderRadius: 5,
-      backgroundColor: remainingPct > 0.2 ? "green" : "yellow",
+      backgroundColor:
+        pctUsed > 1 ? "red" : pctUsed >= 0.8 ? "#ffd900" : "green",
     },
   }));
 
@@ -92,7 +93,7 @@ function BudgetCard({
         <Stack>
           <Typography variant="subtitle1">{budget.category.name}</Typography>
           {budget.monthAmt !== 0 && (
-            <Bar variant="determinate" value={remainingPct * 100} />
+            <Bar variant="determinate" value={Math.min(pctUsed, 1) * 100} />
           )}
           <Stack
             direction="row"
@@ -214,10 +215,8 @@ export default function BudgetsPage() {
     updateMutation.mutate(data);
   };
 
-  const netIncome = budgets && {
-    expected: round2(budgets.budgetedIncome - budgets.budgetedExpenses),
-    actual: budgets && round2(budgets.actualIncome - budgets.actualExpenses),
-  };
+  const netIncome =
+    budgets && round2(budgets.budgetedIncome - budgets.budgetedExpenses);
 
   const NetIncomeDisplay = ({ children }: { children: number }) => (
     <Box
@@ -298,13 +297,7 @@ export default function BudgetsPage() {
                     <Stack direction="row" spacing={2}>
                       <Typography>
                         Anticipated:{" "}
-                        <NetIncomeDisplay>
-                          {netIncome.expected}
-                        </NetIncomeDisplay>
-                      </Typography>
-                      <Typography>
-                        Actual:{" "}
-                        <NetIncomeDisplay>{netIncome.actual}</NetIncomeDisplay>
+                        <NetIncomeDisplay>{netIncome}</NetIncomeDisplay>
                       </Typography>
                     </Stack>
                   </Stack>
