@@ -29,8 +29,17 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
+## Maintaining Dependencies
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Periodically updgrading this project's dependencies is vital. You can check the
+status of the current dependencies by entering `npm outdated`. This will give you
+a list of dependencies that have an out-of-date version.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+You can use `npm update` to update all packages at once while respecting the
+semantic versioning in `package.json`, but if you need to break those constraints
+for a package you need to use `npm install <dependency>@latest`. Yes, you must do
+this manually for each dependency one-by-one. It is recommended that you commit
+each such change after you confirm that it didn't break anything or fix the things
+it did break. Then, if you upgrade something that breaks the client and you can't
+fix it, you can revert the change to both `package.json` and `package-lock.json`
+easily and recover a working local environment.
