@@ -1,5 +1,6 @@
 import { Fab, Stack } from "@mui/material";
 import { ReactNode } from "react";
+import { v4 as uuid4 } from "uuid";
 
 interface FloatingActionProps {
   onClick?: () => void;
@@ -46,6 +47,7 @@ export default function FloatingActions({ buttons }: FloatingActionsProps) {
     >
       {buttons.map((btnProps) => (
         <FloatingAction
+          key={uuid4()}
           onClick={btnProps.onClick}
           color={btnProps.color}
           variant={btnProps.variant}

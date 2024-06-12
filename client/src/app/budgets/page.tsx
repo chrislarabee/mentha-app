@@ -284,7 +284,7 @@ export default function BudgetsPage() {
                   <Stack>
                     <Typography
                       variant="h6"
-                      component="div"
+                      component="p"
                       sx={{
                         textTransform: "uppercase",
                       }}

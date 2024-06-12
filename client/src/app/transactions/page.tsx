@@ -86,7 +86,7 @@ function SplitTransaction({
   });
   const transactions = useWatch({ control, name: "inputs" });
 
-  const getSplitTotal = () => sum(transactions.map((t) => t.amt));
+  const getSplitTotal = () => round2(sum(transactions.map((t) => t.amt)));
 
   const generateTransactionInput = (
     amt: number,
