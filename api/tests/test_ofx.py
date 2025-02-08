@@ -63,7 +63,7 @@ def test_read_ofx_transaction_row():
 
 
 def test_read_ofx_file():
-    assert read_ofx_file("tests/samples/acct_trns.ofx") == OFXFileData(
+    expected = OFXFileData(
         bank_id="123456",
         acct_id="123_456-S0200",
         acct_type="CHECKING",
@@ -110,3 +110,5 @@ def test_read_ofx_file():
             ),
         ],
     )
+    assert read_ofx_file("tests/samples/acct_trns.ofx") == expected
+    assert read_ofx_file("tests/samples/acct_trns_newlines.ofx") == expected

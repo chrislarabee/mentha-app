@@ -1,6 +1,6 @@
 import re
 import operator
-from typing import Generic, Optional, TypeVar
+from typing import Any, Callable, Generic, Optional, TypeVar
 from uuid import UUID
 from app.domain.category import INCOME, Category
 from app.domain.core import DataIntegrityError, DomainModel, InputModel
@@ -67,7 +67,7 @@ def check_rule_against_transaction(
         if not pat_match or pat_match.groups()[1] == "":
             raise DataIntegrityError(error_msg, "matchAmt", rule.matchAmt)
         else:
-            ops = {
+            ops: dict[str, Callable[[Any, Any], bool]] = {
                 "=": operator.eq,
                 ">": operator.gt,
                 "<": operator.lt,

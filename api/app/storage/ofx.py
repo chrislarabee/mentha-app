@@ -68,14 +68,27 @@ def read_ofx_transaction_row(trn: str) -> OFXTransaction:
 
 
 def read_ofx_file(filepath: str | Path) -> OFXFileData:
-    raw_header: str = ""
+    raw_header = ""
     raw_transactions = list[str]()
+    accumulate = False
+    trn_accumulator = ""
     with open(filepath) as file:
         for line in file:
-            if "<STMTTRN>" in line:
-                raw_transactions.append(line.strip())
+            line = line.strip()
+            if "<STMTTRN>" in line and "</STMTTRN>" in line:
+                raw_transactions.append(line)
+            elif line == "</STMTTRN>":
+                trn_accumulator += line
+                raw_transactions.append(trn_accumulator)
+                trn_accumulator = ""
+                accumulate = False
+            elif line == "<STMTTRN>":
+                accumulate = True
+                trn_accumulator += line
+            elif accumulate:
+                trn_accumulator += line
             else:
-                raw_header += line.strip()
+                raw_header += line
 
     header_matches = match_ofx_tokens(raw_header, ["BANKID", "ACCTID", "ACCTTYPE"])
 
