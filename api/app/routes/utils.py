@@ -6,6 +6,7 @@ from uuid import UUID
 from dateutil.relativedelta import relativedelta
 from fastapi import Query
 
+from app.constants import DT_FORMAT
 from app.domain.category import (
     SYSTEM_CATEGORIES,
     Category,
@@ -230,7 +231,7 @@ def preprocess_filters(filters: list[FilterModel]) -> dict[str, FilterModel]:
                 f.term = int(term)
             elif datematch:
                 yyyy, mm, dd = datematch.groups()
-                f.term = datetime.strptime(f"{yyyy}-{mm}-{dd}", "%Y-%m-%d").date()
+                f.term = datetime.strptime(f"{yyyy}-{mm}-{dd}", DT_FORMAT).date()
         result[f.field] = f
     return result
 
