@@ -1,5 +1,3 @@
-version: "3.1"
-
 services:
   api:
     build: api/.
@@ -14,6 +12,7 @@ services:
       - ./api/docker-entrypoint.sh:/docker-entrypoint.sh
       - ./api/app:/app/app
       - ./api/imports:/app/imports
+      - ./api/exports:/app/exports
       - ./api/alembic-mentha-db:/app/alembic-mentha-db
       - ./api/alembic.ini:/app/alembic.ini
       - ./api/tests:/app/tests
