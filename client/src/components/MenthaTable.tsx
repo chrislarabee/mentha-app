@@ -9,6 +9,7 @@ import {
   GridValueGetterParams,
 } from "@mui/x-data-grid";
 import { ReactElement, ReactNode } from "react";
+import { v4 as uuid4 } from "uuid";
 
 export interface PaginationModel {
   page: number;
@@ -90,7 +91,7 @@ export default function MenthaTable<T extends Record<string, any>>({
       type: "actions",
       getActions: (params) => {
         return actions.map((action) => (
-          <Tooltip title={action.label}>
+          <Tooltip key={uuid4()} title={action.label}>
             <GridActionsCellItem
               label={action.label}
               icon={action.icon}
