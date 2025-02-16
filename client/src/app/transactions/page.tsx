@@ -18,9 +18,9 @@ import { Category, UNCATEGORIZED, findCatById } from "@/schemas/category";
 import {
   MenthaQuery,
   QueryFilterParam,
-  round2,
   SYSTEM_USER,
   currencyFormatter,
+  round2,
   sum,
 } from "@/schemas/shared";
 import {
@@ -191,13 +191,18 @@ export default function TransactionsPage() {
     pageSize: 50,
   });
 
-  const { data: transactions, isLoading } = useTransactionsByOwner(
+  const {
+    data: transactions,
+    isLoading,
+    refetch: refetchTrans,
+  } = useTransactionsByOwner(
     SYSTEM_USER,
     query,
     paginationModel.page + 1,
     paginationModel.pageSize
   );
-  const { data: categories } = useCategoriesByOwnerFlat(SYSTEM_USER);
+  const { data: categories, refetch: refetchCats } =
+    useCategoriesByOwnerFlat(SYSTEM_USER);
 
   const updateMutation = useUpdateTransaction();
   const importMutation = useImportTransactions((result) => {
@@ -396,15 +401,28 @@ export default function TransactionsPage() {
         horizontalOffset="right"
       >
         <Box sx={{ padding: 2 }}>
-          <Button
-            variant="outlined"
-            fullWidth
-            onClick={() => {
-              importMutation.mutate(SYSTEM_USER);
-            }}
-          >
-            Import
-          </Button>
+          <Stack spacing={1}>
+            <Button
+              variant="outlined"
+              fullWidth
+              onClick={async () => {
+                await importMutation.mutateAsync(SYSTEM_USER);
+                handleActionsClose();
+              }}
+            >
+              Import
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={async () => {
+                handleActionsClose();
+                await refetchTrans();
+                await refetchCats();
+              }}
+            >
+              Refresh
+            </Button>
+          </Stack>
         </Box>
       </MenthaPopover>
       <Snackbar

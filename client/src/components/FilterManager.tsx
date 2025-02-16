@@ -29,7 +29,7 @@ function TextFilterInputs({ heading, onApply }: FilterInputProps) {
   const [op, setOp] = useState<"=" | "like">("like");
   const apply = () => {
     if (onApply && term && op) {
-      onApply(op, term);
+      onApply(op, op === "=" ? term : `.*${term}.*`);
     }
   };
   return (

@@ -186,10 +186,11 @@ class Between(QueryOperation):
 
 class Like(QueryOperation):
     def __init__(self, term: str) -> None:
+        term = re.sub(r"\.\*", "%", term)
         super().__init__(term)
 
     def apply(self, select: Select[Any], column: Column[Any]) -> Select[Any]:
-        return select.where(column.like(self.term))
+        return select.where(column.ilike(self.term))
 
 
 class MenthaTable(Generic[DomainModelT]):
