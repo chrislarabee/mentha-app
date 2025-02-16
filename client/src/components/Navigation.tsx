@@ -128,13 +128,11 @@ export default function Navigation({
       icon: <Sell />,
       label: "Categories",
       url: "/categories",
-      subnavs: [
-        {
-          icon: <AccountTreeRounded />,
-          label: "Rules",
-          url: "/rules",
-        },
-      ],
+    },
+    {
+      icon: <AccountTreeRounded />,
+      label: "Rules",
+      url: "/rules",
     },
     {
       icon: <InsertChart />,
