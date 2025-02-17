@@ -3,8 +3,8 @@ import math
 from pathlib import Path
 import re
 import shutil
-from datetime import datetime
-from typing import Any, Callable, Mapping, TypeVar, overload
+from datetime import datetime, timedelta
+from typing import Any, Callable, Literal, Mapping, TypeVar, overload
 
 from app.constants import DT_FORMAT
 
@@ -113,6 +113,28 @@ def run_cli_transaction_file_search(
     sorted_dates = [datetime.strptime(dt, DT_FORMAT) for dt in file_contents.keys()]
     sorted_dates.sort()
     sorted_datestrs = [datetime.strftime(dt, DT_FORMAT) for dt in sorted_dates]
+
+    def _browse(val: str | None, dir: Literal["p", "n"]) -> str | None:
+        i = -1 if dir == "p" else 1
+        if val is None:
+            return sorted_datestrs[-1 if dir == "p" else 0]
+        else:
+            while True:
+                try:
+                    idx = sorted_datestrs.index(val)
+                except ValueError:
+                    dt = datetime.strptime(val, DT_FORMAT) + (timedelta(days=1) * i)
+                    val = dt.strftime(DT_FORMAT)
+                else:
+                    if idx - 1 < 0:
+                        print("No previous dates.")
+                    elif idx + 1 >= len(sorted_datestrs):
+                        print("No subsequent dates.")
+                    else:
+                        return sorted_datestrs[idx + i]
+                    break
+        return val
+
     search_val: str | None = None
     while True:
         u = input("Enter date (Q to quit, J for next date, K for previous date): ")
@@ -120,23 +142,9 @@ def run_cli_transaction_file_search(
             print("Quitting search...")
             break
         elif u.lower() == "k":
-            if search_val is not None:
-                cur_idx = sorted_datestrs.index(search_val)
-                if cur_idx - 1 < 0:
-                    print("No previous orders.")
-                else:
-                    search_val = sorted_datestrs[cur_idx - 1]
-            else:
-                search_val = sorted_datestrs[-1]
+            search_val = _browse(search_val, "p")
         elif u.lower() == "j":
-            if search_val is not None:
-                cur_idx = sorted_datestrs.index(search_val)
-                if cur_idx + 1 >= len(sorted_datestrs):
-                    print("No subsequent orders.")
-                else:
-                    search_val = sorted_datestrs[cur_idx + 1]
-            else:
-                search_val = sorted_datestrs[0]
+            search_val = _browse(search_val, "n")
         else:
             try:
                 search_val = datetime.strptime(u, DT_FORMAT).strftime(DT_FORMAT)
