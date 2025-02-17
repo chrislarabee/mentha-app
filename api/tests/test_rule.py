@@ -45,7 +45,8 @@ def test_check_rule_against_transaction():
     transaction = Transaction(
         id=uuid4(),
         fitId="prueba",
-        amt=-12.05,
+        amt=12.05,
+        type="debit",
         date=datetime.now().date(),
         name="foo restaurant",
         category=UNCATEGORIZED.id,
@@ -54,18 +55,18 @@ def test_check_rule_against_transaction():
     )
     assert check_rule_against_transaction(rule, transaction) == cat_id
     rule.matchName = None
-    rule.matchAmt = "-12.05"
-    assert check_rule_against_transaction(rule, transaction) == cat_id
-    rule.matchAmt = "<0"
+    rule.matchAmt = "12.05"
     assert check_rule_against_transaction(rule, transaction) == cat_id
     rule.matchAmt = ">0"
-    assert check_rule_against_transaction(rule, transaction) is None
-    rule.matchAmt = "<=-12.01"
     assert check_rule_against_transaction(rule, transaction) == cat_id
-    rule.matchAmt = "<=-12.1"
+    rule.matchAmt = "<0"
+    assert check_rule_against_transaction(rule, transaction) is None
+    rule.matchAmt = ">=12.01"
+    assert check_rule_against_transaction(rule, transaction) == cat_id
+    rule.matchAmt = ">=12.1"
     assert check_rule_against_transaction(rule, transaction) is None
     rule.matchName = ".*foo.*"
-    rule.matchAmt = "<0"
-    assert check_rule_against_transaction(rule, transaction) == cat_id
     rule.matchAmt = ">0"
+    assert check_rule_against_transaction(rule, transaction) == cat_id
+    rule.matchAmt = "<0"
     assert check_rule_against_transaction(rule, transaction) is None

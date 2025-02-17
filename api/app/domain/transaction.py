@@ -14,6 +14,7 @@ TransactionType = Literal["credit", "debit"]
 class Transaction(DomainModel, Generic[CategoryT]):
     fitId: str
     amt: float
+    type: TransactionType
     date: date
     name: str
     category: CategoryT
@@ -33,27 +34,17 @@ class TransactionInput(InputModel):
     owner: UUID
 
 
-class OutputTransaction(DomainModel):
-    fitId: str
-    amt: float
-    type: TransactionType
-    date: date
-    name: str
-    category: Category
-    account: UUID
-    owner: UUID
-
-
 def decode_transaction_input_model(
     uuid: UUID, input: TransactionInput
 ) -> Transaction[UUID]:
     return Transaction(
         id=uuid,
         fitId=input.fitId,
-        amt=abs(input.amt) * (-1 if input.type == "debit" else 1),
+        amt=abs(input.amt),
         date=input.date.date(),
         name=input.name,
         category=input.category or UNCATEGORIZED.id,
         account=input.account,
         owner=input.owner,
+        type=input.type,
     )

@@ -2,7 +2,7 @@ from datetime import date, datetime
 from uuid import UUID, uuid4
 from app.domain.category import Category, PrimaryCategory, Subcategory
 from app.domain.core import FilterModel
-from app.domain.transaction import Transaction
+from app.domain.transaction import Transaction, TransactionType
 from app.domain.trend import CategorySpendingByMonth, NetIncomeByMonth
 from app.domain.user import SYSTEM_USER
 from app.routes import utils
@@ -166,32 +166,36 @@ def test_preprocess_filters():
     }
 
 
-def test_summarize_transactions_by_category():
-    def _gen_test_tran(amt: float, cat: UUID) -> Transaction[UUID]:
-        return Transaction(
-            id=uuid4(),
-            fitId="test",
-            amt=amt,
-            date=datetime.now().date(),
-            category=cat,
-            name="foo",
-            account=uuid4(),
-            owner=uuid4(),
-        )
+def gen_test_tran(
+    amt: float, cat: UUID, type: TransactionType = "debit", *, date: date | None = None
+) -> Transaction[UUID]:
+    return Transaction(
+        id=uuid4(),
+        fitId="test",
+        type=type,
+        amt=amt,
+        date=date or datetime.now().date(),
+        category=cat,
+        name="foo",
+        account=uuid4(),
+        owner=uuid4(),
+    )
 
+
+def test_summarize_transactions_by_category():
     cat_a = uuid4()
     cat_b = uuid4()
     cat_c = uuid4()
 
     assert utils.summarize_transactions_by_category(
         [
-            _gen_test_tran(-123.06, cat_a),
-            _gen_test_tran(1002.00, cat_b),
-            _gen_test_tran(550, cat_b),
-            _gen_test_tran(-456.99, cat_a),
-            _gen_test_tran(-67.54, cat_c),
-            _gen_test_tran(-789.12, cat_a),
-            _gen_test_tran(-31.08, cat_c),
+            gen_test_tran(123.06, cat_a),
+            gen_test_tran(1002.00, cat_b, "credit"),
+            gen_test_tran(550, cat_b, "credit"),
+            gen_test_tran(456.99, cat_a),
+            gen_test_tran(67.54, cat_c),
+            gen_test_tran(789.12, cat_a),
+            gen_test_tran(31.08, cat_c),
         ]
     ) == {cat_a: -1369.17, cat_b: 1552.00, cat_c: -98.62}
 
@@ -199,24 +203,12 @@ def test_summarize_transactions_by_category():
 def test_summarize_transactions_by_month():
     cat_id = uuid4()
 
-    def _gen_test_tran(amt: float, date: date) -> Transaction[UUID]:
-        return Transaction(
-            id=uuid4(),
-            fitId="test",
-            amt=amt,
-            date=date,
-            category=cat_id,
-            name="foo",
-            account=uuid4(),
-            owner=uuid4(),
-        )
-
     transactions = [
-        _gen_test_tran(123.45, date(2024, 1, 23)),
-        _gen_test_tran(400, date(2024, 2, 29)),
-        _gen_test_tran(-320.06, date(2024, 2, 13)),
-        _gen_test_tran(-10.11, date(2023, 12, 6)),
-        _gen_test_tran(-82.28, date(2023, 12, 19)),
+        gen_test_tran(123.45, cat_id, type="credit", date=date(2024, 1, 23)),
+        gen_test_tran(400, cat_id, type="credit", date=date(2024, 2, 29)),
+        gen_test_tran(320.06, cat_id, date=date(2024, 2, 13)),
+        gen_test_tran(10.11, cat_id, date=date(2023, 12, 6)),
+        gen_test_tran(82.28, cat_id, date=date(2023, 12, 19)),
     ]
 
     assert utils.summarize_transactions_by_month(

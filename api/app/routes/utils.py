@@ -236,6 +236,21 @@ def preprocess_filters(filters: list[FilterModel]) -> dict[str, FilterModel]:
     return result
 
 
+def sum_transactions(trans: Iterable[Transaction[Any]]) -> float:
+    """
+    Sums and rounds the transaction amt of a transaction iterable. Uses transaction
+    type to determine if each amt should be negative or positive. Rounds to nearest
+    two decimals.
+
+    Args:
+        trans (Iterable[Transaction[Any]]): Transactions to sum.
+
+    Returns:
+        float: The total amt of the passed transactions.
+    """
+    return round(sum([-t.amt if t.type == "debit" else t.amt for t in trans]), 2)
+
+
 def summarizer_category_spending(
     month: datetime, trans: Iterable[Transaction[CategoryT]]
 ) -> CategorySpendingByMonth[CategoryT]:
@@ -255,7 +270,7 @@ def summarizer_category_spending(
     return CategorySpendingByMonth(
         date=month,
         category=categories[0],
-        amt=round(sum([tran.amt for tran in trans]), 2),
+        amt=sum_transactions(trans),
     )
 
 
@@ -264,9 +279,9 @@ def summarizer_net_income(
 ) -> NetIncomeByMonth:
     return NetIncomeByMonth(
         date=month,
-        income=round(sum([tran.amt for tran in trans if tran.amt >= 0]), 2),
-        expense=round(sum([tran.amt for tran in trans if tran.amt < 0]), 2),
-        net=round(sum([tran.amt for tran in trans]), 2),
+        income=sum_transactions([tran for tran in trans if tran.type == "credit"]),
+        expense=sum_transactions([tran for tran in trans if tran.type == "debit"]),
+        net=sum_transactions(trans),
     )
 
 
@@ -282,7 +297,7 @@ def summarize_transactions_by_category(
         if cat_id not in groups:
             groups[cat_id] = []
         groups[cat_id].append(tran)
-    return {k: sum([tran.amt for tran in v]) for k, v in groups.items()}
+    return {k: sum_transactions(v) for k, v in groups.items()}
 
 
 def summarize_transactions_by_month(

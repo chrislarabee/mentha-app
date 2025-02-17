@@ -7,7 +7,6 @@ from app.domain.category import UNCATEGORIZED, Category
 from app.domain.core import PagedResultsModel, QueryModel
 from app.domain.rule import check_rule_against_transaction
 from app.domain.transaction import (
-    OutputTransaction,
     Transaction,
     TransactionInput,
     decode_transaction_input_model,
@@ -20,7 +19,7 @@ from app.storage.importer import Importer
 
 class TransactionRouter(
     BasicRouter[Transaction[UUID], TransactionInput],
-    ByOwnerMethods[OutputTransaction],
+    ByOwnerMethods[Transaction[Category]],
 ):
     def __init__(self, mentha_db: MenthaDB) -> None:
         super().__init__(
@@ -69,7 +68,7 @@ class TransactionRouter(
         query: QueryModel,
         page: int = 1,
         pageSize: int = 50,
-    ) -> PagedResultsModel[OutputTransaction]:
+    ) -> PagedResultsModel[Transaction[Category]]:
         raw_results = await self._table.query_async(
             page=page,
             page_size=pageSize,
@@ -131,12 +130,12 @@ class TransactionRouter(
     @staticmethod
     def _transform(
         tran: Transaction[UUID], categories: dict[UUID, Category]
-    ) -> OutputTransaction:
-        return OutputTransaction(
+    ) -> Transaction[Category]:
+        return Transaction[Category](
             id=tran.id,
             fitId=tran.fitId,
-            amt=abs(tran.amt),
-            type="credit" if tran.amt > 0 else "debit",
+            amt=tran.amt,
+            type=tran.type,
             date=tran.date,
             name=tran.name,
             category=categories[tran.category],

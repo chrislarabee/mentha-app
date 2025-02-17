@@ -7,7 +7,7 @@ def test_decode_transaction_input_model():
     tran_input = TransactionInput(
         id=None,
         fitId="test",
-        amt=123.45,
+        amt=-123.45,
         type="debit",
         date=datetime.now(),
         name="test",
@@ -16,7 +16,7 @@ def test_decode_transaction_input_model():
         account=uuid4(),
     )
     result = decode_transaction_input_model(uuid4(), tran_input)
-    assert result.amt == -123.45
+    assert result.amt == 123.45
     tran_input.type = "credit"
     result = decode_transaction_input_model(uuid4(), tran_input)
     assert result.amt == 123.45
