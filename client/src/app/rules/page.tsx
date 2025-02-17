@@ -48,7 +48,7 @@ import { useForm } from "react-hook-form";
 export default function RulesPage() {
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [resultCat, setResultCat] = useState<string>(UNCATEGORIZED);
-  const [resultType, setResultType] = useState<TransactionType>();
+  const [resultType, setResultType] = useState<TransactionType | null>();
   const [deletePromptOpen, setDeletePromptOpen] = useState(false);
   const [toDelete, setToDelete] = useState<Rule>();
   const [modalHeading, setModalHeading] = useState("Add New Rule");
@@ -140,6 +140,7 @@ export default function RulesPage() {
                 matchType: rule.matchType,
               });
               setResultCat(rule.resultCategory.id);
+              setResultType(rule.matchType);
               setModalHeading("Edit Rule");
               setFormModalOpen(true);
             }
@@ -211,6 +212,7 @@ export default function RulesPage() {
             onSubmitSuccess={() => {
               reset(defaultInput);
               setResultCat(UNCATEGORIZED);
+              setResultType(undefined);
               setFormModalOpen(false);
             }}
           >
