@@ -2,10 +2,9 @@ import re
 import operator
 from typing import Any, Callable, Generic, Optional, TypeVar
 from uuid import UUID
-from app.domain.category import INCOME, Category
+from app.domain.category import Category
 from app.domain.core import DataIntegrityError, DomainModel, InputModel
-from app.domain.transaction import Transaction
-from app.domain.user import SYSTEM_USER
+from app.domain.transaction import Transaction, TransactionType
 
 RULE_TABLE = "rules"
 
@@ -20,6 +19,7 @@ class Rule(DomainModel, Generic[CategoryT]):
     owner: UUID
     matchName: Optional[str]
     matchAmt: Optional[str]
+    matchType: Optional[TransactionType]
 
 
 class RuleInput(InputModel):
@@ -29,6 +29,7 @@ class RuleInput(InputModel):
     owner: UUID
     matchName: Optional[str] = None
     matchAmt: Optional[str] = None
+    matchType: Optional[TransactionType] = None
 
 
 def decode_rule_input_model(uuid: UUID, input: RuleInput) -> Rule[UUID]:
@@ -47,6 +48,7 @@ def decode_rule_input_model(uuid: UUID, input: RuleInput) -> Rule[UUID]:
         owner=input.owner,
         matchName=input.matchName,
         matchAmt=input.matchAmt,
+        matchType=input.matchType,
     )
 
 
@@ -81,21 +83,9 @@ def check_rule_against_transaction(
             except ValueError:
                 raise DataIntegrityError(error_msg, "matchAmt", rule.matchAmt)
             match_dict["match_amt"] = opfunc(trn_input.amt, amt)
+    if rule.matchType:
+        match_dict["match_type"] = trn_input.type == rule.matchType
     # Currently all match values must match:
     if sum(match_dict.values()) == len(match_dict):
         result = rule.resultCategory
     return result
-
-
-INCOME_RULE = Rule(
-    id=UUID("1829b879-0de5-4e1b-8a9a-c6d899f0f69e"),
-    priority=1000,
-    resultCategory=INCOME.id,
-    matchName=None,
-    matchAmt=">0",
-    owner=SYSTEM_USER.id,
-)
-
-SYSTEM_RULES = [
-    INCOME_RULE,
-]

@@ -27,16 +27,28 @@ import {
   QueryFilterParam,
   SYSTEM_USER,
   removeNullsFromArray,
+  title,
 } from "@/schemas/shared";
+import { TransactionType } from "@/schemas/transaction";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { Add, Delete, Edit } from "@mui/icons-material";
-import { Box, Container, Paper, Snackbar, Stack } from "@mui/material";
+import {
+  Box,
+  Container,
+  FormControlLabel,
+  Paper,
+  Radio,
+  RadioGroup,
+  Snackbar,
+  Stack,
+} from "@mui/material";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 export default function RulesPage() {
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [resultCat, setResultCat] = useState<string>(UNCATEGORIZED);
+  const [resultType, setResultType] = useState<TransactionType>();
   const [deletePromptOpen, setDeletePromptOpen] = useState(false);
   const [toDelete, setToDelete] = useState<Rule>();
   const [modalHeading, setModalHeading] = useState("Add New Rule");
@@ -105,6 +117,10 @@ export default function RulesPage() {
         },
         { field: "matchAmt" },
         { field: "matchName" },
+        {
+          field: "matchType",
+          formatter: (value) => (value ? title(value) : value),
+        },
         { field: "priority", type: "number" },
       ]}
       actions={[
@@ -121,6 +137,7 @@ export default function RulesPage() {
                 owner: rule.owner,
                 matchAmt: rule.matchAmt,
                 matchName: rule.matchName,
+                matchType: rule.matchType,
               });
               setResultCat(rule.resultCategory.id);
               setModalHeading("Edit Rule");
@@ -169,6 +186,7 @@ export default function RulesPage() {
   const submit = (ruleData: RuleInput) => {
     if (resultCat) {
       ruleData.resultCategory = resultCat;
+      ruleData.matchType = resultType;
     }
   };
 
@@ -185,9 +203,9 @@ export default function RulesPage() {
             formConfig={formReturn}
             labels={RuleInputLabels}
             textFields={[
+              { field: "priority", type: "number", required: true },
               "matchAmt",
               "matchName",
-              { field: "priority", type: "number", required: true },
             ]}
             onSubmit={submit}
             onSubmitSuccess={() => {
@@ -196,6 +214,28 @@ export default function RulesPage() {
               setFormModalOpen(false);
             }}
           >
+            <RadioGroup
+              onChange={(evt) =>
+                setResultType(evt.target.value as TransactionType | undefined)
+              }
+              value={resultType}
+            >
+              <FormControlLabel
+                value="credit"
+                control={<Radio />}
+                label="Credit"
+              />
+              <FormControlLabel
+                value="debit"
+                control={<Radio />}
+                label="Debit"
+              />
+              <FormControlLabel
+                value={undefined}
+                control={<Radio />}
+                label="Do not match"
+              />
+            </RadioGroup>
             {categories && (
               <CategoryAutocomplete
                 categories={categories}

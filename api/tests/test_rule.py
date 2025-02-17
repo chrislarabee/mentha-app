@@ -41,6 +41,7 @@ def test_check_rule_against_transaction():
         owner=uuid4(),
         matchName=".*foo.*",
         matchAmt=None,
+        matchType=None,
     )
     transaction = Transaction(
         id=uuid4(),
@@ -57,10 +58,12 @@ def test_check_rule_against_transaction():
     rule.matchName = None
     rule.matchAmt = "12.05"
     assert check_rule_against_transaction(rule, transaction) == cat_id
-    rule.matchAmt = ">0"
+    rule.matchAmt = None
+    rule.matchType = "debit"
     assert check_rule_against_transaction(rule, transaction) == cat_id
-    rule.matchAmt = "<0"
+    rule.matchType = "credit"
     assert check_rule_against_transaction(rule, transaction) is None
+    rule.matchType = None
     rule.matchAmt = ">=12.01"
     assert check_rule_against_transaction(rule, transaction) == cat_id
     rule.matchAmt = ">=12.1"

@@ -130,3 +130,7 @@ export function dateToMonthSlashYear(date: Date | string) {
 export function sum(values: number[]) {
   return values.reduce((prev, current) => prev + Number(current), 0);
 }
+
+export function title(value: any) {
+  return String(value).charAt(0).toUpperCase() + String(value).slice(1);
+}

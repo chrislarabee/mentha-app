@@ -63,6 +63,7 @@ class RuleRouter(BasicRouter[Rule[UUID], RuleInput], ByOwnerMethods[Rule[Categor
                 owner=rule.owner,
                 matchName=rule.matchName,
                 matchAmt=rule.matchAmt,
+                matchType=rule.matchType,
             )
 
         return raw_results.broadcast_transform(_transform)

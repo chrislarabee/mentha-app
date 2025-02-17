@@ -1,6 +1,7 @@
 import * as yup from "yup";
 import { Labels, pagedResultsSchema } from "./shared";
 import { categorySchema } from "./category";
+import { TransactionTypes } from "./transaction";
 
 export const basicRuleSchema = yup.object({
   id: yup.string().required(),
@@ -9,6 +10,10 @@ export const basicRuleSchema = yup.object({
   owner: yup.string().required(),
   matchName: yup.string().nullable(),
   matchAmt: yup.string().nullable(),
+  matchType: yup
+    .string()
+    .oneOf([...TransactionTypes])
+    .nullable(),
 });
 
 // TODO: Add .omit(["owner"]) once user login is set up.
@@ -39,6 +44,7 @@ export const RuleLabels: Labels<Rule> = {
   owner: "Owner",
   matchName: "Match Name",
   matchAmt: "Match Amt",
+  matchType: "Match Type",
 };
 
 export const RuleInputLabels: Labels<RuleInput> = {
@@ -48,4 +54,5 @@ export const RuleInputLabels: Labels<RuleInput> = {
   owner: RuleLabels["owner"],
   matchName: RuleLabels["matchName"],
   matchAmt: RuleLabels["matchAmt"],
+  matchType: RuleLabels["matchType"],
 };
