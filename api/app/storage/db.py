@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 import logging
 import re
 from abc import ABC, abstractmethod
@@ -28,25 +29,37 @@ from app.storage import utils
 MENTHA_DBNAME = "mentha-db"
 
 
+@dataclass
+class MenthaDBConfig:
+    user: str
+    pwd: str
+    host: str
+    dbname: str = MENTHA_DBNAME
+
+
+@dataclass
+class MenthaDBAsyncConfig:
+    timeout_async: int = 30
+    pool_size_async: int = 5
+    max_overflow_async: int = 10
+
+
 class MenthaDB:
     def __init__(
         self,
-        user: str,
-        pwd: str,
-        host: str,
-        timeout_async: int = 30,
-        pool_size_async: int = 5,
-        max_overflow_async: int = 10,
+        config: MenthaDBConfig,
+        async_config: MenthaDBAsyncConfig | None = None,
         conn_attempts: int = 10,
     ) -> None:
-        url = self.construct_db_url(user, pwd, host)
+        self._url = self.construct_db_url(config)
         self._metadata = MetaData()
-        self._engine = sa.create_engine(url)
+        self._engine = sa.create_engine(self._url)
         self._engine_async = sasync.create_async_engine(
-            self.construct_db_url(user, pwd, host, "async"),
-            max_overflow=max_overflow_async,
-            pool_size=pool_size_async,
-            pool_timeout=timeout_async,
+            self.construct_db_url(config, "async"),
+            # max_overflow=max_overflow_async,
+            # pool_size=pool_size_async,
+            # pool_timeout=timeout_async,
+            poolclass=sa.pool.NullPool,
         )
         for i in range(conn_attempts):
             try:
@@ -56,10 +69,10 @@ class MenthaDB:
             except OperationalError as e:
                 if i == conn_attempts - 1:
                     msg = "Failed to connect to db."
-                    m = re.search(r"://.*?:(.*?)@", url)
+                    m = re.search(r"://.*?:(.*?)@", self._url)
                     if m:
                         start, end = m.span(1)
-                        clean_url = url[:start] + "*****" + url[end:]
+                        clean_url = self._url[:start] + "*****" + self._url[end:]
                         msg = f"Failed to connect to {clean_url}."
                     raise TimeoutError(f"{msg} Error = {e}.")
                 if e.code != "e3q8":
@@ -106,13 +119,25 @@ class MenthaDB:
 
     @staticmethod
     def construct_db_url(
-        user: str,
-        pwd: str,
-        host: str,
+        config: MenthaDBConfig,
         mode: Literal["sync", "async"] = "sync",
     ) -> str:
         driver = "asyncpg" if mode == "async" else "psycopg"
-        return f"postgresql+{driver}://{user}:{pwd}@{host}/{MENTHA_DBNAME}"
+        user = config.user
+        pwd = config.pwd
+        host = config.host
+        dbname = config.dbname
+        return f"postgresql+{driver}://{user}:{pwd}@{host}/{dbname}"
+
+    def dispose(self) -> None:
+        self._engine.dispose()
+
+    async def dispose_async(self) -> None:
+        await self._engine_async.dispose()
+
+    @property
+    def url(self) -> str:
+        return self._url
 
     @property
     def accounts(self) -> MenthaTable[Account[UUID]]:

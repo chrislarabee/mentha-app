@@ -6,14 +6,16 @@ from sqlalchemy import pool
 from alembic import context
 from dotenv import load_dotenv
 
-from app.storage.db import MenthaDB
+from app.storage.db import MenthaDB, MenthaDBConfig
 
 load_dotenv()
 
 sqlalchemy_url = MenthaDB.construct_db_url(
-    user=os.environ["DB_USER"],
-    pwd=os.environ["DB_PWD"],
-    host=os.environ["DB_URL"],
+    MenthaDBConfig(
+        user=os.environ["DB_USER"],
+        pwd=os.environ["DB_PWD"],
+        host=os.environ["DB_URL"],
+    )
 )
 
 
