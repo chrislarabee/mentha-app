@@ -57,9 +57,15 @@ REFUND = Category(
     name="Return / Reimbursement / Refund",
     owner=SYSTEM_USER.id,
 )
+TRANSFER = Category(
+    id=UUID("c37846fa-1ee0-4e1d-95dd-5c46e13e08c8"),
+    name="Transfer",
+    owner=SYSTEM_USER.id,
+)
 
 SYSTEM_CATEGORIES = [
     UNCATEGORIZED,
     INCOME,
     REFUND,
+    TRANSFER,
 ]
