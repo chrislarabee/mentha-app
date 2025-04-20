@@ -53,13 +53,23 @@ def read_ofx_transaction_row(trn: str) -> OFXTransaction:
         trn,
         ["FITID", "DTPOSTED", "TRNAMT", "TRNTYPE", "NAME", "MEMO"],
     )
+    post_dt = matches["DTPOSTED"]
+    # Treat this datestr pattern as the default since the error from strptime is
+    # plenty explanatory if an alternate pattern isn't found.
+    dpattern = "%Y%m%d%H%M%S"
+    patterns = {r"\d{14}": dpattern, r"\d{8}": "%Y%m%d"}
+    for rpat, dpat in patterns.items():
+        m = re.match(rpat, post_dt)
+        if m:
+            dpattern = dpat
+            break
 
     # All found values should be populated at this point if the transaction row
     # was in the expected format. Unexpected values should raise appropraite
     # ValueErrors:
     return OFXTransaction(
         fit_id=matches["FITID"],
-        dt_posted=datetime.strptime(matches["DTPOSTED"], "%Y%m%d%H%M%S").date(),
+        dt_posted=datetime.strptime(post_dt, dpattern).date(),
         trn_amt=float(matches["TRNAMT"]),
         trn_type=matches["TRNTYPE"],
         name=matches["NAME"],

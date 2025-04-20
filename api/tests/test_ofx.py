@@ -41,17 +41,29 @@ def test_match_ofx_tokens():
 
 
 def test_read_ofx_transaction_row():
-    assert read_ofx_transaction_row(
-        "<STMTTRN><TRNTYPE>DEBIT<DTPOSTED>20230828123115<TRNAMT>-1.00"
-        "<FITID>789_1011-S0200|123456<NAME>Foo"
-        "<MEMO>DebitCard, Withdrawal, Processed</STMTTRN>",
-    ) == OFXTransaction(
+    expected = OFXTransaction(
         fit_id="789_1011-S0200|123456",
         dt_posted=date(2023, 8, 28),
         trn_amt=-1.00,
         trn_type="DEBIT",
         name="Foo",
         memo="DebitCard, Withdrawal, Processed",
+    )
+    assert (
+        read_ofx_transaction_row(
+            "<STMTTRN><TRNTYPE>DEBIT<DTPOSTED>20230828123115<TRNAMT>-1.00"
+            "<FITID>789_1011-S0200|123456<NAME>Foo"
+            "<MEMO>DebitCard, Withdrawal, Processed</STMTTRN>",
+        )
+        == expected
+    )
+    assert (
+        read_ofx_transaction_row(
+            "<STMTTRN><TRNTYPE>DEBIT<DTPOSTED>20230828<TRNAMT>-1.00"
+            "<FITID>789_1011-S0200|123456<NAME>Foo"
+            "<MEMO>DebitCard, Withdrawal, Processed</STMTTRN>",
+        )
+        == expected
     )
 
     with pytest.raises(ValueError, match="could not convert string to float: '1.oo'"):
