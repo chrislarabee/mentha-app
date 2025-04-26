@@ -14,7 +14,7 @@ import {
   BudgetInputLabels,
   budgetInputSchema,
 } from "@/schemas/budget";
-import { UNCATEGORIZED, findCatById } from "@/schemas/category";
+import { INCOME, UNCATEGORIZED, findCatById } from "@/schemas/category";
 import {
   SYSTEM_USER,
   currencyFormatter,
@@ -57,6 +57,7 @@ function BudgetCard({
 }) {
   let pctUsed = 0;
   let displayText = "";
+  let exceededBudgetColor = budget.category.parentCategory === INCOME ? "green" : "red";
   const formattedAmt = currencyFormatter.format(budget.amt);
   const formattedMonthAmt = currencyFormatter.format(budget.monthAmt);
   const formattedAccumulation = currencyFormatter.format(budget.accumulatedAmt);
@@ -83,7 +84,7 @@ function BudgetCard({
     [`& .${linearProgressClasses.bar}`]: {
       borderRadius: 5,
       backgroundColor:
-        pctUsed > 1 ? "red" : pctUsed >= 0.8 ? "#ffd900" : "green",
+        pctUsed > 1 ? exceededBudgetColor : pctUsed >= 0.8 ? "#ffd900" : "green",
     },
   }));
 
