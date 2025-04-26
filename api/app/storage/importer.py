@@ -4,11 +4,10 @@ from typing import Iterable
 from uuid import UUID, uuid4
 
 from app.domain.account import Account, AccountType
-from app.domain.category import UNCATEGORIZED
 from app.domain.rule import Rule, check_rule_against_transaction
-from app.domain.transaction import Transaction
+from app.domain.transaction import Transaction, decode_ofx_transaction
 from app.storage.db import Between, MenthaDB
-from app.storage.ofx import OFXFileData, OFXTransaction, read_ofx_file
+from app.storage.ofx import OFXFileData, read_ofx_file
 
 IMPORT_FILES = Path("imports/")
 INBOX = IMPORT_FILES.joinpath("inbox")
@@ -72,26 +71,36 @@ class Importer:
                 await self._db.accounts.insert_async(acct)
             else:
                 acct = accts[0]
+            import_trans = [
+                decode_ofx_transaction(
+                    uuid4(),
+                    t,
+                    acct_id=acct.id,
+                    owner_id=self._owner,
+                    tran_fit_id_pat=inst.transFitIdPat,
+                )
+                for t in ofx_file.transactions
+            ]
             # Pull transactions matching the import file's date range and reject
             # any in the import that have a fit_id of an existing transaction.
-            ofx_trans = ofx_file.transactions
-            ofx_trans.sort(key=lambda a: a.dt_posted)
+            import_trans.sort(key=lambda a: a.date)
             recent_trans = await self._db.transactions.page_through_query_async(
                 owner=self._owner,
-                date=Between(ofx_trans[0].dt_posted, ofx_trans[-1].dt_posted),
+                date=Between(import_trans[0].date, import_trans[-1].date),
                 account=acct.id,
             )
             for tran in recent_trans:
                 existing_fit_ids.add(tran.fitId)
-            eligible_trans = list[OFXTransaction]()
-            for tran in ofx_trans:
-                if tran.fit_id in existing_fit_ids:
+            eligible_trans = list[Transaction[UUID]]()
+            for tran in import_trans:
+                if tran.fitId in existing_fit_ids:
                     reject_ct += 1
                 else:
                     eligible_trans.append(tran)
             # Only bother applying rules to eligible transactions, obviously:
-            transactions = await self.check_rules_against_ofx_transactions(
-                eligible_trans, self._rules, acct.id, self._owner
+            transactions = await self.check_rules_against_imported_transactions(
+                eligible_trans,
+                self._rules,
             )
             await self._db.transactions.insert_async(*transactions)
             import_ct += len(transactions)
@@ -101,20 +110,13 @@ class Importer:
         return ImportResult(import_ct=import_ct, preexisting_transactions=reject_ct)
 
     @classmethod
-    async def check_rules_against_ofx_transactions(
+    async def check_rules_against_imported_transactions(
         cls,
-        ofxtrns: Iterable[OFXTransaction],
+        trns: Iterable[Transaction[UUID]],
         rules: list[Rule[UUID]],
-        acct_id: UUID,
-        owner_id: UUID,
     ) -> list[Transaction[UUID]]:
         results = list[Transaction[UUID]]()
-        for transaction in ofxtrns:
-            tran = cls.decode_ofx_transaction_to_domain(
-                transaction,
-                acct_id,
-                owner_id,
-            )
+        for tran in trns:
             for rule in rules:
                 check = check_rule_against_transaction(rule, tran)
                 if check:
@@ -122,22 +124,6 @@ class Importer:
                     break
             results.append(tran)
         return results
-
-    @staticmethod
-    def decode_ofx_transaction_to_domain(
-        ofxtrn: OFXTransaction, acct_id: UUID, owner_id: UUID
-    ) -> Transaction[UUID]:
-        return Transaction(
-            id=uuid4(),
-            fitId=ofxtrn.fit_id,
-            amt=abs(ofxtrn.trn_amt),
-            type="debit" if ofxtrn.trn_amt < 0 else "credit",
-            date=ofxtrn.dt_posted,
-            name=ofxtrn.name,
-            category=UNCATEGORIZED.id,
-            account=acct_id,
-            owner=owner_id,
-        )
 
     @staticmethod
     def create_acct_from_ofx_file(

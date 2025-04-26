@@ -5,6 +5,7 @@ from app.storage.ofx import (
     OFXFileData,
     OFXTransaction,
     UnexpectedOFXFormat,
+    match_ofx_date_pattern,
     match_ofx_tokens,
     read_ofx_file,
     read_ofx_transaction_row,
@@ -38,6 +39,13 @@ def test_match_ofx_tokens():
             "<FITID>789_1011-S0200|123456<NAME>Foo"
             "<MEMO>DebitCard, Withdrawal, Processed</STMTTRN>"
         )
+
+
+def test_match_ofx_date_pattern():
+    assert match_ofx_date_pattern("20230828123115") == "%Y%m%d%H%M%S"
+    assert match_ofx_date_pattern("20230828") == "%Y%m%d"
+    # Check unexpected dates use fallback pattern:
+    assert match_ofx_date_pattern("202308") == "%Y%m%d%H%M%S"
 
 
 def test_read_ofx_transaction_row():

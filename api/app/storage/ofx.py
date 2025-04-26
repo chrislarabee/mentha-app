@@ -34,6 +34,19 @@ class OFXTokenMatch:
     found: str = ""
 
 
+def match_ofx_date_pattern(datelike: str) -> str:
+    # Treat this datestr pattern as the default since the error from strptime is
+    # plenty explanatory if an alternate pattern isn't found.
+    dpattern = "%Y%m%d%H%M%S"
+    patterns = {r"\d{14}": dpattern, r"\d{8}": "%Y%m%d"}
+    for rpat, dpat in patterns.items():
+        m = re.match(rpat, datelike)
+        if m:
+            dpattern = dpat
+            break
+    return dpattern
+
+
 def match_ofx_tokens(raw: str, tokens: Iterable[str]) -> dict[str, str]:
     matches = {token: "" for token in tokens}
 
@@ -54,16 +67,7 @@ def read_ofx_transaction_row(trn: str) -> OFXTransaction:
         ["FITID", "DTPOSTED", "TRNAMT", "TRNTYPE", "NAME", "MEMO"],
     )
     post_dt = matches["DTPOSTED"]
-    # Treat this datestr pattern as the default since the error from strptime is
-    # plenty explanatory if an alternate pattern isn't found.
-    dpattern = "%Y%m%d%H%M%S"
-    patterns = {r"\d{14}": dpattern, r"\d{8}": "%Y%m%d"}
-    for rpat, dpat in patterns.items():
-        m = re.match(rpat, post_dt)
-        if m:
-            dpattern = dpat
-            break
-
+    dpattern = match_ofx_date_pattern(post_dt)
     # All found values should be populated at this point if the transaction row
     # was in the expected format. Unexpected values should raise appropraite
     # ValueErrors:
