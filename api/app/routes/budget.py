@@ -11,7 +11,7 @@ from app.domain.budget import (
     decode_budget_input_model,
     get_anticipated_net_val,
 )
-from app.domain.category import INCOME, UNCATEGORIZED, Category
+from app.domain.category import INCOME, TRANSFER, UNCATEGORIZED, Category
 from app.domain.core import PagedResultsModel, QueryModel
 from app.routes.router import BasicRouter
 from app.routes.utils import (
@@ -20,7 +20,7 @@ from app.routes.utils import (
     get_categories_by_id,
     summarize_transactions_by_category,
 )
-from app.storage.db import Between, MenthaDB
+from app.storage.db import Between, MenthaDB, SimpleOp
 
 
 class BudgetRouter(BasicRouter[Budget[UUID], BudgetInput]):
@@ -82,6 +82,7 @@ class BudgetRouter(BasicRouter[Budget[UUID], BudgetInput]):
             [],
             owner=ownerId,
             date=Between(start_m, end_m),
+            category=SimpleOp(TRANSFER.id, "!="),
         )
         sum_trans = summarize_transactions_by_category(transactions)
         for bgt in raw_results:

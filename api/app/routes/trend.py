@@ -1,20 +1,19 @@
 from datetime import date
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException
-from app.domain.category import Category
+from app.domain.category import SYSTEM_CATEGORIES_BY_ID, TRANSFER, Category
 
 from app.domain.trend import CategorySpendingByMonth, NetIncomeByMonth
 from app.routes.utils import (
     DateQueryParam,
     gen_dt_range,
-    gen_month_list,
     summarize_transactions_by_month,
     summarizer_category_spending,
     summarizer_net_income,
 )
-from app.storage.db import Between, MenthaDB
+from app.storage.db import Between, MenthaDB, SimpleOp
 
 
 class TrendRouter:
@@ -47,7 +46,9 @@ class TrendRouter:
     ) -> list[NetIncomeByMonth]:
         start, end = gen_dt_range(startDt, endDt)
         transactions = await self._db.transactions.page_through_query_async(
-            owner=ownerId, date=Between(start, end)
+            owner=ownerId,
+            date=Between(start, end),
+            category=SimpleOp(TRANSFER.id, "!="),
         )
         return summarize_transactions_by_month(transactions, summarizer_net_income)
 
@@ -58,22 +59,23 @@ class TrendRouter:
         startDt: Annotated[date | None, DateQueryParam] = None,
         endDt: Annotated[date | None, DateQueryParam] = None,
     ) -> list[CategorySpendingByMonth[Category]]:
-        start, end = gen_dt_range(startDt, endDt)
-        cat = await self._db.categories.get_async(category)
-        if not cat:
-            raise HTTPException(404, f"Category {category} not found.")
+        if category in SYSTEM_CATEGORIES_BY_ID:
+            cat = SYSTEM_CATEGORIES_BY_ID[category]
+        else:
+            cat = await self._db.categories.get_async(category)
+            if not cat:
+                raise HTTPException(404, f"Category {category} not found.")
+        query_args = dict[str, Any](owner=ownerId, category=category)
+        if startDt and endDt:
+            query_args["date"] = Between(startDt, endDt)
         transactions = await self._db.transactions.page_through_query_async(
-            owner=ownerId, category=category, date=Between(start, end)
+            sorts=None, **query_args
         )
         raw_summary = summarize_transactions_by_month(
             transactions, summarizer_category_spending
         )
-        grouped_summary = {s.date: s for s in raw_summary}
         result = list[CategorySpendingByMonth[Category]]()
-        for month in gen_month_list(start, end):
-            summary = grouped_summary.get(
-                month, CategorySpendingByMonth(date=month, category=category, amt=0)
-            )
+        for summary in raw_summary:
             result.append(
                 CategorySpendingByMonth[Category](
                     date=summary.date, category=cat, amt=abs(summary.amt)
