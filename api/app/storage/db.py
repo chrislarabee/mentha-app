@@ -166,15 +166,15 @@ class MenthaDB:
 
 class QueryOperation(ABC):
     def __init__(self, term: Any) -> None:
-        self.term = term
+        self.term = str(term) if isinstance(term, UUID) else term
 
     @abstractmethod
     def apply(self, select: Select[Any], column: Column[Any]) -> Select[Any]:
         return NotImplemented
 
 
-SIMPLE_OPS = ["=", ">", "<", ">=", "<="]
-SimpleOperator = Literal["=", ">", "<", ">=", "<="]
+SIMPLE_OPS = ["=", ">", "<", ">=", "<=", "!="]
+SimpleOperator = Literal["=", ">", "<", ">=", "<=", "!="]
 
 
 class SimpleOp(QueryOperation):
