@@ -97,9 +97,7 @@ function FormTextField<T extends FieldValues>({
 
 interface FormProps<T extends FieldValues> {
   mutation: UseMutationResult<void, Error, T, any>;
-  formConfig:
-    | UseFormReturn<any, any, undefined>
-    | { schema: yup.ObjectSchema<any, any, any, any> };
+  formConfig: UseFormReturn<any, any, undefined>;
   labels: Labels<T>;
   textFields?: (keyof T | TextFieldDefinition<T>)[];
   defaultValues?: T;
@@ -128,19 +126,11 @@ export default function Form<T extends FieldValues>({
     }
   });
 
-  const config =
-    "schema" in formConfig
-      ? useForm({
-          resolver: yupResolver(formConfig.schema),
-          defaultValues: formConfig.schema.cast(defaultValues),
-        })
-      : formConfig;
-
   const {
     control,
     formState: { errors },
     handleSubmit,
-  } = config;
+  } = formConfig;
 
   const submit: SubmitHandler<T> = (data) => {
     if (onSubmit) {
