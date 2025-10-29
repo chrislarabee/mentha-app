@@ -22,7 +22,7 @@ services:
       - 8000:80
 
   client:
-    image: node:20.9
+    image: node:22.5
     restart: always
     working_dir: /app
     # environment:
